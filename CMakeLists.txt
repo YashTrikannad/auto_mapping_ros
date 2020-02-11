@@ -163,6 +163,10 @@ target_link_libraries(graph_builder_test
         ${OpenCV_LIBS}
         )
 
+target_link_libraries(skeletonizer_test
+        ${OpenCV_LIBS}
+        )
+
 
 
 #############
