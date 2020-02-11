@@ -9,6 +9,8 @@
 #include <opencv2/highgui.hpp>
 #include <utility>
 
+
+/// Basic Cell of the Graph
 struct Node
 {
     explicit Node(const std::array<int, 2>& node): x(node[0]), y(node[1]){}
@@ -22,19 +24,26 @@ bool operator==(const Node& lhs, const Node& rhs)
     return (lhs.x == rhs.x) && (lhs.y == rhs.y);
 }
 
+/// Class for constructing the graph from skeleton image and blueprint
 class GraphBuilder
 {
 public:
-    explicit GraphBuilder(cv::Mat skeletonized_image, cv::Mat map):
+    /// Constructs GraphBuilder class
+    /// @param skeletonized_image - image obtained from skeletonization and subtracting the blueprint
+    /// @param map - Original blueprint of the map
+    GraphBuilder(cv::Mat skeletonized_image, cv::Mat map):
     skeletonized_image_(std::move(skeletonized_image)), map_(std::move(map))
     {}
 
+    /// Builds the graph
     void build_graph()
     {
         const auto corners = find_corners();
         construct_graph(corners);
     }
 
+    /// Get the graph if it is constructed
+    /// @return Built graph
     std::vector<Node> get_graph()
     {
         if(graph_.empty())
@@ -49,6 +58,8 @@ private:
     cv::Mat map_;
     std::vector<Node> graph_;
 
+    /// Finds all the important features/corners in the blueprint which can be used as nodes
+    /// @return vector of corners/features
     std::vector<std::array<int, 2>> find_corners()
     {
         int blockSize = 3;
@@ -85,11 +96,44 @@ private:
         return corner_points;
     }
 
+    /// Checks collision between two nodes using the DDA Line algorithm
+    /// @param current_node
+    /// @param neighbor_node
+    /// @return true if there is a collision else false
     bool check_collision(const Node& current_node, const Node& neighbor_node)
     {
-        //TODO: Bresenhams Algorithm 
+        const int dx = neighbor_node.x - current_node.x;
+        const int dy = neighbor_node.y - current_node.y;
+
+        int steps = 0;
+        if (std::abs(dx) > std::abs(dy))
+        {
+            steps = std::abs(dx);
+        }
+        else
+        {
+            steps = std::abs(dy);
+        }
+
+        double x_increment = dx / static_cast<double>(steps);
+        double y_increment = dy / static_cast<double>(steps);
+
+        double intermediate_x = current_node.x;
+        double intermediate_y = current_node.y;
+        for(int v=0; v < steps; v++)
+        {
+            intermediate_x = intermediate_x + x_increment;
+            intermediate_y = intermediate_y + y_increment;
+            if(map_.at<uchar>(static_cast<int>(intermediate_x), static_cast<int>(intermediate_y)) == 255)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
+    /// Constructs the graph using the input feature cells (corners)
+    /// @param corners
     void construct_graph(const std::vector<std::array<int, 2>>& corners)
     {
         for(const auto& corner: corners)
@@ -102,10 +146,11 @@ private:
             std::vector<Node*> neighbor_nodes;
             for(auto& candidate_neighbor_node: graph_)
             {
-                if(check_collision(node, candidate_neighbor_node))
+                if(node == candidate_neighbor_node || check_collision(node, candidate_neighbor_node))
                 {
-                    neighbor_nodes.emplace_back(&candidate_neighbor_node);
+                    continue;
                 }
+                neighbor_nodes.emplace_back(&candidate_neighbor_node);
             }
             node.neighbors = neighbor_nodes;
         }
