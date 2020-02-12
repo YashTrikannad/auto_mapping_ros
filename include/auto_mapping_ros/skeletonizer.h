@@ -7,21 +7,24 @@
 #include "opencv2/imgproc.hpp"
 #include "opencv2/highgui.hpp"
 
+namespace amr
+{
+
 class Skeletonizer
 {
 public:
-    Skeletonizer(): map_jpg()
+    Skeletonizer() : map_jpg()
     {}
 
-    void read_map(const std::string& map_filename)
+    void read_map(const std::string &map_filename)
     {
         map_jpg = cv::imread(map_filename, 0);
     }
 
     void display_img(cv::Mat img, std::string name = "Result")
     {
-        namedWindow( name, cv::WINDOW_AUTOSIZE );
-        cv::imshow( name, img );
+        namedWindow(name, cv::WINDOW_AUTOSIZE);
+        cv::imshow(name, img);
         cv::waitKey(0);
     }
 
@@ -57,5 +60,7 @@ public:
 private:
     cv::Mat map_jpg;
 };
+
+}
 
 #endif //AUTO_MAPPING_ROS_SKELETONIZER_H

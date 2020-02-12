@@ -55,7 +55,7 @@ int main()
     }
     std::cout << "\n";
 
-    GraphBuilder builder(skeleton, map);
+    amr::GraphBuilder builder(skeleton, map);
     builder.build_graph();
     const auto graph = builder.get_graph();
 
