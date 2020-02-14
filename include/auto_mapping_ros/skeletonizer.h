@@ -7,6 +7,10 @@
 #include "opencv2/imgproc.hpp"
 #include "opencv2/highgui.hpp"
 
+#ifndef DEBUG
+#define DEBUG 1
+#endif
+
 namespace amr
 {
 
@@ -21,17 +25,16 @@ public:
         map_jpg = cv::imread(map_filename, 0);
     }
 
-    void display_img(cv::Mat img, std::string name = "Result")
+    void display_img(cv::Mat img, std::string name = "Skeletonized Image")
     {
         namedWindow(name, cv::WINDOW_AUTOSIZE);
         cv::imshow(name, img);
         cv::waitKey(0);
     }
 
-    void skeletonize()
+    cv::Mat skeletonize()
     {
         cv::threshold(map_jpg, map_jpg, 230, 255, cv::THRESH_BINARY);
-
         cv::Mat skel(map_jpg.size(), CV_8UC1, cv::Scalar(0));
         cv::Mat temp(map_jpg.size(), CV_8UC1);
 
@@ -48,13 +51,18 @@ public:
             cv::erode(map_jpg, map_jpg, element);
 
             double max;
-            cv::minMaxLoc(map_jpg, 0, &max);
+            cv::minMaxLoc(map_jpg, nullptr, &max);
             done = (max == 0);
 
         } while (!done);
 
-        display_img(skel);
+        if(DEBUG)
+        {
+            display_img(skel);
+        }
 
+
+        return skel;
     }
 
 private:
