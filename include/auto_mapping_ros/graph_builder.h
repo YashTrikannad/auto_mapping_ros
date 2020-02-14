@@ -52,6 +52,10 @@ public:
     {
         const auto corners = find_corners();
         construct_graph(corners);
+        if(DEBUG)
+        {
+            visualize_graph();
+        }
     }
 
     /// Get the graph if it is constructed
@@ -74,7 +78,7 @@ private:
     /// @param img - Input Image
     /// @param corners - vector of all corner features
     /// @param name - Display name
-    void display_corners(const cv::Mat& img,
+    static void display_corners(const cv::Mat& img,
             const std::vector<std::array<int, 2>>& corners,
             const std::string& name = "Skeletonized Image")
     {
@@ -206,12 +210,6 @@ private:
 
         const auto dense_corner_centroids = find_sparse_centroid(corner_points);
 
-        if(DEBUG)
-        {
-            cv::Mat display_img = map_;
-            display_corners(display_img, dense_corner_centroids);
-        }
-
         std::vector<std::array<int, 2>> unique_sparse_centroids;
         std::set<std::array<int, 2>> sparse_centroid_set(dense_corner_centroids.begin(), dense_corner_centroids.end());
         unique_sparse_centroids.assign(sparse_centroid_set.begin(), sparse_centroid_set.end());
@@ -219,6 +217,9 @@ private:
         std::cout << "There are " << unique_sparse_centroids.size() << " features detected in this image.";
         return unique_sparse_centroids;
     }
+
+    //TODO: Implement this function to trim the overlapping edges in the graph
+    void trim_edges();
 
     /// Checks collision between two nodes using the DDA Line algorithm
     /// @param current_node
@@ -247,7 +248,9 @@ private:
         {
             intermediate_x = intermediate_x + x_increment;
             intermediate_y = intermediate_y + y_increment;
-            if (map_.at<uchar>(static_cast<int>(intermediate_y), static_cast<int>(intermediate_x)) == 255)
+            const auto pixel_value = static_cast<int>(
+                    map_.at<uchar>(static_cast<int>(intermediate_x), static_cast<int>(intermediate_y)));
+            if (pixel_value < 10)
             {
                 return true;
             }
@@ -268,17 +271,51 @@ private:
         {
             std::vector<Node *> neighbor_nodes;
             std::vector<double> neighbor_nodes_cost;
-            for (auto &candidate_neighbor_node: graph_)
+            for (auto& candidate_neighbor_node: graph_)
             {
                 if (node == candidate_neighbor_node || check_collision(node, candidate_neighbor_node))
                 {
                     continue;
                 }
                 neighbor_nodes.emplace_back(&candidate_neighbor_node);
-                neighbor_nodes_cost.emplace_back();
+                const auto distance = static_cast<double>(
+                        std::abs(node.y-candidate_neighbor_node.y)+std::abs(node.x-candidate_neighbor_node.x));
+                neighbor_nodes_cost.emplace_back(distance);
             }
             node.neighbors = neighbor_nodes;
+            node.neighbors_cost = neighbor_nodes_cost;
         }
+
+//        trim_edges();
+    }
+
+    void visualize_graph()
+    {
+        cv::Mat visual_graph(map_.size(), CV_8UC3, cv::Vec3b(0, 0, 0));
+
+        for(int i=0; i<map_.rows; i++)
+        {
+            for(int j=0; j<map_.cols; j++)
+            {
+                if (map_.at<uchar>(i, j) == 255)
+                {
+                    visual_graph.at<cv::Vec3b>(i, j) = cv::Vec3b(255, 255, 255);
+                }
+            }
+        }
+
+        for(const auto& node : graph_)
+        {
+            cv::circle(visual_graph, {node.y, node.x} , 4, cv::Scalar(100, 0, 0));
+            for(const auto& neighbor: node.neighbors)
+            {
+                cv::line(visual_graph, {node.y, node.x}, {neighbor->y, neighbor->x}, cv::Scalar(0, 0, 100));
+            }
+        }
+
+        namedWindow( "Visual Graph", cv::WINDOW_AUTOSIZE);
+        imshow( "Visual Graph", visual_graph );
+        cv::waitKey(0);
     }
 };
 

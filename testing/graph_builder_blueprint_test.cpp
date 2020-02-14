@@ -1,4 +1,4 @@
-#define DEBUG 0
+#define DEBUG 1
 
 #include "auto_mapping_ros/graph_builder.h"
 #include "auto_mapping_ros/skeletonizer.h"
