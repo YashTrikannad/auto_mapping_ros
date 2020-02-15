@@ -4,11 +4,13 @@
 #include <array>
 #include <iostream>
 #include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
-#include <opencv2/highgui.hpp>
-#include <utility>
 #include <set>
+#include <utility>
+
+#include "utils.h"
 
 #ifndef DEBUG
 #define DEBUG 1
@@ -16,25 +18,6 @@
 
 namespace amr
 {
-
-/// Basic Cell of the Graph
-struct Node
-{
-    explicit Node(const std::array<int, 2> &node) : x(node[0]), y(node[1])
-    {}
-
-    int x;
-    int y;
-    std::vector<Node *> neighbors;
-    std::vector<double> neighbors_cost;
-};
-
-bool operator==(const Node &lhs, const Node &rhs)
-{
-    return (lhs.x == rhs.x) && (lhs.y == rhs.y);
-}
-
-using Graph = std::vector<Node>;
 
 /// Class for constructing the graph from skeleton image and blueprint
 class GraphBuilder
@@ -54,7 +37,7 @@ public:
         construct_graph(corners);
         if(DEBUG)
         {
-            visualize_graph();
+            visualize_graph(map_, graph_);
         }
     }
 
@@ -73,24 +56,6 @@ private:
     cv::Mat skeletonized_image_;
     cv::Mat map_;
     std::vector<Node> graph_;
-
-    /// Debug Function- Displays the corners overlayed on the image
-    /// @param img - Input Image
-    /// @param corners - vector of all corner features
-    /// @param name - Display name
-    static void display_corners(const cv::Mat& img,
-            const std::vector<std::array<int, 2>>& corners,
-            const std::string& name = "Skeletonized Image")
-    {
-        for(const auto& corner: corners)
-        {
-            cv::circle(img, cv::Point(corner[1], corner[0]), 2, cv::Scalar(0));
-        }
-
-        namedWindow(name, cv::WINDOW_AUTOSIZE);
-        cv::imshow(name, img);
-        cv::waitKey(0);
-    }
 
     /// Performs morphological operation of dilation on the input image
     /// @param img - input image to be diluted
@@ -184,7 +149,7 @@ private:
     /// @return vector of corners/features
     std::vector<std::array<int, 2>> find_corners()
     {
-        int blockSize = 12;
+        int blockSize = 14;
         int apertureSize = 7;
         double k = 0.04;
 
@@ -219,7 +184,77 @@ private:
     }
 
     //TODO: Implement this function to trim the overlapping edges in the graph
-    void trim_edges();
+    void trim_edges()
+    {
+        auto slope = [](Node* node1, Node* node2){
+            return static_cast<double>(node2->y - node1->y)/(node2->x - node1->x);
+        };
+
+        // Loop through all Nodes in the graph
+        for(auto& node: graph_)
+        {
+            std::vector<double> neighbor_slopes;
+
+            // Loop through all neighbors of the neighbor node to find the slope of them with respect to current node
+            for(auto& neighbor : node.neighbors)
+            {
+                neighbor_slopes.emplace_back(slope(&node, neighbor));
+            }
+
+            const int n_neighbors = node.neighbors.size();
+            std::vector<bool> is_valid(n_neighbors, true);
+            const double threshold = 0;
+
+            auto trim_edge = [&](Node* node_end){
+                std::vector<Node*> neighbor_nodes_current;
+                for(auto& neighbor_node:node.neighbors)
+                {
+                    if(neighbor_node==node_end)
+                    {
+                        continue;
+                    }
+                    neighbor_nodes_current.emplace_back(neighbor_node);
+                }
+                node.neighbors = neighbor_nodes_current;
+
+                std::vector<Node*> neighbor_nodes_end;
+                for(auto& neighbor_node:node_end->neighbors)
+                {
+                    if(*neighbor_node == node)
+                    {
+                        continue;
+                    }
+                    neighbor_nodes_end.emplace_back(neighbor_node);
+                }
+                node_end->neighbors = neighbor_nodes_end;
+            };
+
+            // Trim edges of current node
+            for(int i=0; i<n_neighbors; i++)
+            {
+                if(!is_valid[i]) continue;
+
+                // check if any of the neighbors have similar slope.
+                for(int j=0; j<n_neighbors; j++)
+                {
+                    if(i==j) continue;
+                    if(std::abs(neighbor_slopes[i]-neighbor_slopes[j]) < threshold)
+                    {
+                        if(node.neighbors_cost[i]>node.neighbors_cost[j])
+                        {
+                            is_valid[i] = false;
+                            trim_edge(node.neighbors[i]);
+                        }
+                        else
+                        {
+                            is_valid[j] = false;
+                            trim_edge(node.neighbors[j]);
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     /// Checks collision between two nodes using the DDA Line algorithm
     /// @param current_node
@@ -286,36 +321,7 @@ private:
             node.neighbors_cost = neighbor_nodes_cost;
         }
 
-//        trim_edges();
-    }
-
-    void visualize_graph()
-    {
-        cv::Mat visual_graph(map_.size(), CV_8UC3, cv::Vec3b(0, 0, 0));
-
-        for(int i=0; i<map_.rows; i++)
-        {
-            for(int j=0; j<map_.cols; j++)
-            {
-                if (map_.at<uchar>(i, j) == 255)
-                {
-                    visual_graph.at<cv::Vec3b>(i, j) = cv::Vec3b(255, 255, 255);
-                }
-            }
-        }
-
-        for(const auto& node : graph_)
-        {
-            cv::circle(visual_graph, {node.y, node.x} , 4, cv::Scalar(100, 0, 0));
-            for(const auto& neighbor: node.neighbors)
-            {
-                cv::line(visual_graph, {node.y, node.x}, {neighbor->y, neighbor->x}, cv::Scalar(0, 0, 100));
-            }
-        }
-
-        namedWindow( "Visual Graph", cv::WINDOW_AUTOSIZE);
-        imshow( "Visual Graph", visual_graph );
-        cv::waitKey(0);
+        trim_edges();
     }
 };
 
