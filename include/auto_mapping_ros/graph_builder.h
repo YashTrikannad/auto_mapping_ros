@@ -74,28 +74,10 @@ private:
     cv::Mat map_;
     std::vector<Node> graph_;
 
-    /// Debug Function- Displays the corners overlayed on the image
-    /// @param img - Input Image
-    /// @param corners - vector of all corner features
-    /// @param name - Display name
-    static void display_corners(const cv::Mat& img,
-            const std::vector<std::array<int, 2>>& corners,
-            const std::string& name = "Skeletonized Image")
-    {
-        for(const auto& corner: corners)
-        {
-            cv::circle(img, cv::Point(corner[1], corner[0]), 2, cv::Scalar(0));
-        }
-
-        namedWindow(name, cv::WINDOW_AUTOSIZE);
-        cv::imshow(name, img);
-        cv::waitKey(0);
-    }
-
     /// Performs morphological operation of dilation on the input image
     /// @param img - input image to be diluted
     /// @return
-    cv::Mat dilate(const cv::Mat& img)
+    cv::Mat dilate(const cv::Mat& img) const
     {
         const int dilation_size = 6;
         const int dilation_type = cv::MORPH_RECT;
@@ -111,7 +93,7 @@ private:
     /// Computes the centers of multiple blobs in a binary image
     /// @param binary_image Input Image (Binary/GrayScale)
     /// @return vector of centroids of the white blobs in the input image
-    std::vector<std::array<int, 2>> compute_blob_centers(const cv::Mat& binary_image)
+    std::vector<std::array<int, 2>> compute_blob_centers(const cv::Mat& binary_image) const
     {
         cv::Mat canny_output;
         std::vector<std::vector<cv::Point> > contours;
@@ -168,7 +150,7 @@ private:
     /// @param corners - vector of features detected
     /// @return sparse vector of features
     std::vector<std::array<int, 2>> find_sparse_centroid(
-            const std::vector<std::array<int, 2>>& corners)
+            const std::vector<std::array<int, 2>>& corners) const
     {
         cv::Mat dense_corner_img(map_.size(), CV_8UC1, cv::Scalar(0));
         for(const auto& corner: corners)
@@ -182,7 +164,7 @@ private:
 
     /// Finds all the important features/corners in the blueprint which can be used as nodes
     /// @return vector of corners/features
-    std::vector<std::array<int, 2>> find_corners()
+    std::vector<std::array<int, 2>> find_corners() const
     {
         int blockSize = 12;
         int apertureSize = 7;
@@ -218,14 +200,98 @@ private:
         return unique_sparse_centroids;
     }
 
-    //TODO: Implement this function to trim the overlapping edges in the graph
-    void trim_edges();
+    /// Finds the distance between a point and line segment
+    /// @param x_point - x co-ordinate of point
+    /// @param y_point - y co-ordinate of point
+    /// @param x_line_segment_start - x co-ordinate of start of line segment
+    /// @param y_line_segment_start - y co-ordinate of start of line segment
+    /// @param x_line_segment_end - x co-ordinate of end of line segment
+    /// @param y_line_segment_end - y co-ordinate of end of line segment
+    /// @return distance between point and line segment
+    double pDistance(double x_point, double y_point,
+                     double x_line_segment_start, double y_line_segment_start,
+                     double x_line_segment_end, double y_line_segment_end) const
+    {
+
+        double A = x_point - x_line_segment_start;
+        double B = y_point - y_line_segment_start;
+        double C = x_line_segment_end - x_line_segment_start;
+        double D = y_line_segment_end - y_line_segment_start;
+
+        double dot = A * C + B * D;
+        double len_sq = C * C + D * D;
+        double param = -1;
+
+        if (len_sq != 0)
+            param = dot/len_sq;
+
+        double xx, yy;
+
+        if (param < 0) {
+            xx = x_line_segment_start;
+            yy = y_line_segment_start;
+        }
+        else if (param > 1) {
+            xx = x_line_segment_end;
+            yy = y_line_segment_end;
+        }
+        else {
+            xx = x_line_segment_start + param * C;
+            yy = y_line_segment_start + param * D;
+        }
+
+        auto dx = x_point - xx;
+        auto dy = y_point - yy;
+        return sqrt(dx * dx + dy * dy);
+    }
+
+    /// Checks if any neighbors of the current node lie between the current node and the neighbor node
+    /// @param current_node - current node of the graph
+    /// @param neighbor_node - neighbor node of the current node of the graph
+    /// @return true if a neighbor of current node lies within a threshold distance of the two input nodes
+    bool is_another_node_in_between(Node* current_node, Node* neighbor_node) const
+    {
+        double threshold = 12;
+        for(const auto& current_node_neighbor: current_node->neighbors)
+        {
+            if(current_node_neighbor==neighbor_node) continue;
+            const auto dist = pDistance(current_node_neighbor->x, current_node_neighbor->y,
+                    current_node->x, current_node->y, neighbor_node->x, neighbor_node->y);
+            if(dist < threshold)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// Trims away edges to reduce overlapping edges
+    void trim_edges()
+    {
+        for(auto &current_node: graph_)
+        {
+            const int current_node_neighbors_size = current_node.neighbors.size();
+
+            std::vector<bool> is_valid(current_node_neighbors_size, true);
+            std::vector<Node*> new_current_node_neighbors;
+
+            for(const auto& neighbor_node: current_node.neighbors)
+            {
+                if(is_another_node_in_between(&current_node, neighbor_node))
+                {
+                    continue;
+                }
+                new_current_node_neighbors.emplace_back(neighbor_node);
+            }
+            current_node.neighbors = new_current_node_neighbors;
+        }
+    }
 
     /// Checks collision between two nodes using the DDA Line algorithm
     /// @param current_node
     /// @param neighbor_node
     /// @return true if there is a collision else false
-    bool check_collision(const Node &current_node, const Node &neighbor_node)
+    bool check_collision(const Node &current_node, const Node &neighbor_node) const
     {
         const int dx = neighbor_node.x - current_node.x;
         const int dy = neighbor_node.y - current_node.y;
@@ -278,18 +344,28 @@ private:
                     continue;
                 }
                 neighbor_nodes.emplace_back(&candidate_neighbor_node);
-                const auto distance = static_cast<double>(
-                        std::abs(node.y-candidate_neighbor_node.y)+std::abs(node.x-candidate_neighbor_node.x));
-                neighbor_nodes_cost.emplace_back(distance);
             }
+
             node.neighbors = neighbor_nodes;
             node.neighbors_cost = neighbor_nodes_cost;
         }
 
-//        trim_edges();
+        trim_edges();
+
+        for(auto& node: graph_)
+        {
+            std::vector<double> neighbor_nodes_cost;
+            for(const auto& neighbor_node: node.neighbors)
+            {
+                const auto distance = static_cast<double>(
+                        sqrt(pow(node.y-neighbor_node->y, 2)+pow(node.x-neighbor_node->x, 2)));
+                neighbor_nodes_cost.emplace_back(distance);
+            }
+            node.neighbors_cost = neighbor_nodes_cost;
+        }
     }
 
-    void visualize_graph()
+    void visualize_graph() const
     {
         cv::Mat visual_graph(map_.size(), CV_8UC3, cv::Vec3b(0, 0, 0));
 
