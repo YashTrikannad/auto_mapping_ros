@@ -1,5 +1,9 @@
 #include "auto_mapping_ros/graph_builder.h"
 
+// THIS TEST IS CURRENTLY NOT WORKING.
+// THE INPUT SHOULD BE 0 - Obstacle
+//                    255- Free Space
+
 int main()
 {
     cv::Mat skeleton = cv::Mat::zeros(16,16, CV_8UC1);
@@ -59,6 +63,7 @@ int main()
     builder.build_graph();
     const auto graph = builder.get_graph();
 
+    std::cout << "HI";
     return 0;
 }
 

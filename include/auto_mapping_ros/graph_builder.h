@@ -3,6 +3,7 @@
 
 #include <array>
 #include <iostream>
+#include <libconfig.h++>
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
@@ -45,7 +46,37 @@ public:
     /// @param map - Original blueprint of the map
     GraphBuilder(cv::Mat skeletonized_image, cv::Mat map) :
             skeletonized_image_(std::move(skeletonized_image)), map_(std::move(map))
-    {}
+    {
+        init_config();
+    }
+
+    void init_config()
+    {
+        libconfig::Config cfg;
+        try
+        {
+            cfg.readFile("/home/yash/yasht_ws/src/auto_mapping_ros/config/graph_builder.cfg");
+        }
+        catch(const libconfig::FileIOException &fioex)
+        {
+            std::__throw_invalid_argument("I/O error while reading file.");
+        }
+
+        try
+        {
+            dilation_size_ = cfg.lookup("dilation_size");
+            block_size_ = cfg.lookup("blockSize");
+            aperture_size_ = cfg.lookup("apertureSize");
+            k_ = cfg.lookup("k");
+            distance_threshold_ = cfg.lookup("distance_threshold");
+            obstacle_threshold_ = cfg.lookup("obstacle_threshold");
+        }
+        catch(const libconfig::SettingNotFoundException &nfex)
+        {
+            std::cerr << "Missing setting in configuration file." << std::endl;
+        }
+    }
+
 
     /// Builds the graph
     void build_graph()
@@ -74,12 +105,19 @@ private:
     cv::Mat map_;
     std::vector<Node> graph_;
 
+    int dilation_size_;
+    int block_size_;
+    int aperture_size_;
+    double k_;
+    double distance_threshold_;
+    int obstacle_threshold_;
+
     /// Performs morphological operation of dilation on the input image
     /// @param img - input image to be diluted
     /// @return
     cv::Mat dilate(const cv::Mat& img) const
     {
-        const int dilation_size = 6;
+        const int dilation_size = dilation_size_;
         const int dilation_type = cv::MORPH_RECT;
         cv::Mat element = getStructuringElement( dilation_type,
                                              cv::Size( 2*dilation_size + 1, 2*dilation_size+1 ),
@@ -166,12 +204,8 @@ private:
     /// @return vector of corners/features
     std::vector<std::array<int, 2>> find_corners() const
     {
-        int blockSize = 12;
-        int apertureSize = 7;
-        double k = 0.04;
-
         cv::Mat dst = cv::Mat::zeros(skeletonized_image_.size(), CV_32FC1);
-        cv::cornerHarris(skeletonized_image_, dst, blockSize, apertureSize, k);
+        cv::cornerHarris(skeletonized_image_, dst, block_size_, aperture_size_, k_);
 
         cv::Mat dst_norm, dst_norm_scaled;
         normalize(dst, dst_norm, 0, 255, cv::NORM_MINMAX, CV_32FC1, cv::Mat());
@@ -251,7 +285,7 @@ private:
     /// @return true if a neighbor of current node lies within a threshold distance of the two input nodes
     bool is_another_node_in_between(Node* current_node, Node* neighbor_node) const
     {
-        double threshold = 12;
+        double threshold = distance_threshold_;
         for(const auto& current_node_neighbor: current_node->neighbors)
         {
             if(current_node_neighbor==neighbor_node) continue;
@@ -300,7 +334,8 @@ private:
         if (std::abs(dx) > std::abs(dy))
         {
             steps = std::abs(dx);
-        } else
+        }
+        else
         {
             steps = std::abs(dy);
         }
@@ -316,7 +351,7 @@ private:
             intermediate_y = intermediate_y + y_increment;
             const auto pixel_value = static_cast<int>(
                     map_.at<uchar>(static_cast<int>(intermediate_x), static_cast<int>(intermediate_y)));
-            if (pixel_value < 10)
+            if (pixel_value < obstacle_threshold_)
             {
                 return true;
             }
@@ -373,7 +408,7 @@ private:
         {
             for(int j=0; j<map_.cols; j++)
             {
-                if (map_.at<uchar>(i, j) == 255)
+                if (map_.at<uchar>(i, j) > 200)
                 {
                     visual_graph.at<cv::Vec3b>(i, j) = cv::Vec3b(255, 255, 255);
                 }
@@ -385,7 +420,7 @@ private:
             cv::circle(visual_graph, {node.y, node.x} , 4, cv::Scalar(100, 0, 0));
             for(const auto& neighbor: node.neighbors)
             {
-                cv::line(visual_graph, {node.y, node.x}, {neighbor->y, neighbor->x}, cv::Scalar(0, 0, 100));
+                cv::line(visual_graph, {node.y, node.x}, {neighbor->y, neighbor->x}, cv::Vec3b(0, 0, 100));
             }
         }
 

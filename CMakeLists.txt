@@ -159,19 +159,23 @@ add_executable(coverage_planner_test testing/coverage_planner_test.cpp)
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}_node
   ${catkin_LIBRARIES}
-        ${OpenCV_LIBS}
+${OpenCV_LIBS}
+-lconfig++
 )
 
 target_link_libraries(graph_builder_test
         ${OpenCV_LIBS}
+        -lconfig++
         )
 
 target_link_libraries(skeletonizer_test
         ${OpenCV_LIBS}
+        -lconfig++
         )
 
 target_link_libraries(graph_builder_blueprint_test
         ${OpenCV_LIBS}
+        -lconfig++
         )
 
 
