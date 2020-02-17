@@ -15,7 +15,7 @@ using Sequence = std::vector<std::array<int, 2>>;
 class CoveragePlanner
 {
 public:
-    CoveragePlanner(Graph graph): graph_(std::move(graph))
+    CoveragePlanner(Graph const* graph): graph_(graph)
     {}
 
     //TODO: Implement Coverage Planning algorithm to solve TSP
@@ -28,7 +28,7 @@ public:
     }
 
 private:
-    Graph graph_;
+    const Graph* graph_;
     Sequence sequence_;
 };
 

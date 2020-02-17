@@ -25,7 +25,7 @@ int main()
     graph[3].neighbors.emplace_back(&graph[2]);
     graph[3].neighbors_cost.emplace_back(6);
 
-    amr::CoveragePlanner planner(graph);
+    amr::CoveragePlanner planner(&graph);
 
     return 0;
 }
