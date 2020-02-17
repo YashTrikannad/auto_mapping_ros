@@ -3,6 +3,7 @@ project(auto_mapping_ros)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -142,6 +143,7 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 add_executable(${PROJECT_NAME}_node src/auto_mapping_ros_node.cpp)
 add_executable(skeletonizer_test testing/skeletonizer_test.cpp)
 add_executable(graph_builder_test testing/graph_builder_test.cpp)
+add_executable(graph_builder_blueprint_test testing/graph_builder_blueprint_test.cpp)
 add_executable(coverage_planner_test testing/coverage_planner_test.cpp)
 
 ## Rename C++ executable without prefix
@@ -157,15 +159,23 @@ add_executable(coverage_planner_test testing/coverage_planner_test.cpp)
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}_node
   ${catkin_LIBRARIES}
-        ${OpenCV_LIBS}
+${OpenCV_LIBS}
+-lconfig++
 )
 
 target_link_libraries(graph_builder_test
         ${OpenCV_LIBS}
+        -lconfig++
         )
 
 target_link_libraries(skeletonizer_test
         ${OpenCV_LIBS}
+        -lconfig++
+        )
+
+target_link_libraries(graph_builder_blueprint_test
+        ${OpenCV_LIBS}
+        -lconfig++
         )
 
 

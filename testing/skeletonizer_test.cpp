@@ -4,6 +4,6 @@ int main()
 {
     amr::Skeletonizer processor;
     processor.read_map("/home/yash/yasht_ws/src/auto_mapping_ros/maps/levine.jpg");
-    processor.skeletonize();
+    const auto skeleton = processor.skeletonize();
     return 0;
 }
