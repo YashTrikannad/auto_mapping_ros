@@ -10,6 +10,7 @@
 #include <opencv2/highgui.hpp>
 #include <utility>
 #include <set>
+#include<limits>
 
 #ifndef DEBUG
 #define DEBUG 1
@@ -21,13 +22,15 @@ namespace amr
 /// Basic Cell of the Graph
 struct Node
 {
-    explicit Node(const std::array<int, 2> &node) : x(node[0]), y(node[1])
+    explicit Node(const std::array<int, 2> &node) : x(node[0]), y(node[1]), mst_key(std::numeric_limits<int>::max())
     {}
 
     int x;
     int y;
     std::vector<Node *> neighbors;
     std::vector<double> neighbors_cost;
+    double mst_key;
+    std::vector<Node *> mst_child;
 };
 
 bool operator==(const Node &lhs, const Node &rhs)
