@@ -31,12 +31,28 @@ struct Node
     std::vector<double> neighbors_cost;
     double mst_key;
     std::vector<Node *> mst_child;
+
+    bool operator==(const Node &rhs) const
+    {
+        return (x == rhs.x) && (y == rhs.y);
+    }
+
+    bool operator<(const Node &rhs) const
+    {
+        return mst_key < rhs.mst_key;
+    }
 };
 
-bool operator==(const Node &lhs, const Node &rhs)
+struct NodeHasher
 {
-    return (lhs.x == rhs.x) && (lhs.y == rhs.y);
-}
+    std::size_t operator()(const Node& k) const
+    {
+        using std::size_t;
+        using std::hash;
+
+        return ((hash<size_t >()(k.x)^(hash<size_t >()(k.y) << 1)) >> 1);
+    }
+};
 
 using Graph = std::vector<Node>;
 
