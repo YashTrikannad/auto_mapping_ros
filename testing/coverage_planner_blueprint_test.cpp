@@ -3,6 +3,7 @@
 #include "auto_mapping_ros/coverage_planner.h"
 #include "auto_mapping_ros/graph_builder.h"
 #include "auto_mapping_ros/skeletonizer.h"
+#include "auto_mapping_ros//utils.h"
 
 static constexpr auto filepath = "/home/yash/yasht_ws/src/auto_mapping_ros/maps/levine.jpg";
 
@@ -26,6 +27,9 @@ int main()
     std::vector<std::array<int, 2>> sequence = planner.get_sequence();
 
     std::cout << "size of sequence: " << sequence.size();
+
+    amr::visualize_sequence_on_graph(map, graph, sequence);
+
 
     return 0;
 }

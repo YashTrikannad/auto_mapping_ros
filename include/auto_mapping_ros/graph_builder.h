@@ -4,13 +4,16 @@
 #include <array>
 #include <iostream>
 #include <libconfig.h++>
+#include <limits>
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
-#include <utility>
 #include <set>
-#include<limits>
+#include <utility>
+
+#include "auto_mapping_ros/types.h"
+#include "auto_mapping_ros/utils.h"
 
 #ifndef DEBUG
 #define DEBUG 1
@@ -18,43 +21,6 @@
 
 namespace amr
 {
-
-/// Basic Cell of the Graph
-struct Node
-{
-    explicit Node(const std::array<int, 2> &node) : x(node[0]), y(node[1]), mst_key(std::numeric_limits<int>::max())
-    {}
-
-    int x;
-    int y;
-    std::vector<Node *> neighbors;
-    std::vector<double> neighbors_cost;
-    double mst_key;
-    std::vector<Node *> mst_child;
-
-    bool operator==(const Node &rhs) const
-    {
-        return (x == rhs.x) && (y == rhs.y);
-    }
-
-    bool operator<(const Node &rhs) const
-    {
-        return mst_key < rhs.mst_key;
-    }
-};
-
-struct NodeHasher
-{
-    std::size_t operator()(const Node& k) const
-    {
-        using std::size_t;
-        using std::hash;
-
-        return ((hash<size_t >()(k.x)^(hash<size_t >()(k.y) << 1)) >> 1);
-    }
-};
-
-using Graph = std::vector<Node>;
 
 /// Class for constructing the graph from skeleton image and blueprint
 class GraphBuilder
@@ -100,11 +66,12 @@ public:
     /// Builds the graph
     void build_graph()
     {
+        register_boundary();
         const auto corners = find_corners();
         construct_graph(corners);
         if(DEBUG)
         {
-            visualize_graph();
+            visualize_graph(map_, graph_);
         }
     }
 
@@ -116,7 +83,17 @@ public:
         {
             std::__throw_invalid_argument("Graph needs to be built before using it.");
         }
-        return graph_;
+        return std::move(graph_);
+    }
+
+    static std::vector<std::array<int, 2>> boundary_corners_;
+    static void CallBackFunc(int event, int x, int y, int flags, void* userdata)
+    {
+        if (event == cv::EVENT_LBUTTONDOWN)
+        {
+            std::cout << "Boundary corner selected: (" << x << ", " << y << ") \n";
+            boundary_corners_.emplace_back(std::array<int, 2>{x, y});
+        }
     }
 
 private:
@@ -130,6 +107,20 @@ private:
     double k_;
     double distance_threshold_;
     int obstacle_threshold_;
+
+    void register_boundary()
+    {
+        const std::string window_name = "Functional Area Registration";
+        cv::namedWindow(window_name, 1);
+        cv::setMouseCallback(window_name, this->CallBackFunc, NULL);
+        while(true)
+        {
+            cv::imshow(window_name, map_);
+            if (cv::waitKey(1) & boundary_corners_.size() == 2) break;
+        }
+        cv::destroyWindow(window_name);
+        return;
+    }
 
     /// Performs morphological operation of dilation on the input image
     /// @param img - input image to be diluted
@@ -219,6 +210,12 @@ private:
         return compute_blob_centers(dilated_dense_corner_img);
     }
 
+    static bool is_within_specified_region(int x, int y)
+    {
+        return x > boundary_corners_[0][0] && x < boundary_corners_[1][0]
+               && y > boundary_corners_[0][1] && y < boundary_corners_[1][1];
+    }
+
     /// Finds all the important features/corners in the blueprint which can be used as nodes
     /// @return vector of corners/features
     std::vector<std::array<int, 2>> find_corners() const
@@ -236,7 +233,7 @@ private:
         {
             for (int j = 0; j < dst_norm.cols; j++)
             {
-                if (static_cast<int>(dst_norm.at<float>(i, j)) > 100)
+                if (static_cast<int>(dst_norm.at<float>(i, j)) > 100 && is_within_specified_region(j, i))
                 {
                     corner_points.emplace_back(std::array<int, 2>{i, j});
                 }
@@ -385,7 +382,7 @@ private:
         for (const auto &corner: corners)
         {
             Node node(corner);
-            graph_.push_back(node);
+            graph_.push_back(std::move(node));
         }
         for (auto &node: graph_)
         {
@@ -418,36 +415,9 @@ private:
             node.neighbors_cost = neighbor_nodes_cost;
         }
     }
-
-    void visualize_graph() const
-    {
-        cv::Mat visual_graph(map_.size(), CV_8UC3, cv::Vec3b(0, 0, 0));
-
-        for(int i=0; i<map_.rows; i++)
-        {
-            for(int j=0; j<map_.cols; j++)
-            {
-                if (map_.at<uchar>(i, j) > 200)
-                {
-                    visual_graph.at<cv::Vec3b>(i, j) = cv::Vec3b(255, 255, 255);
-                }
-            }
-        }
-
-        for(const auto& node : graph_)
-        {
-            cv::circle(visual_graph, {node.y, node.x} , 4, cv::Scalar(100, 0, 0));
-            for(const auto& neighbor: node.neighbors)
-            {
-                cv::line(visual_graph, {node.y, node.x}, {neighbor->y, neighbor->x}, cv::Vec3b(0, 0, 100));
-            }
-        }
-
-        namedWindow( "Visual Graph", cv::WINDOW_AUTOSIZE);
-        imshow( "Visual Graph", visual_graph );
-        cv::waitKey(0);
-    }
 };
+
+std::vector<std::array<int, 2>> GraphBuilder::boundary_corners_ = {};
 
 }
 

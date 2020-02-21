@@ -60,10 +60,26 @@ private:
         while(!open_set.empty())
         {
             // get minimum key node from queue and add to mst
-            auto curr_node_iterator = std::min_element(open_set.begin(), open_set.end());
-            Node* curr_node = *curr_node_iterator;
+            Node* min_node = nullptr;
+            double min_node_distance = std::numeric_limits<double >::max();
+            for(const auto& node: open_set)
+            {
+                if(node->mst_key < min_node_distance)
+                {
+                    min_node = node;
+                    min_node_distance = node->mst_key;
+                }
+            }
+
+            if(min_node == nullptr)
+            {
+                std::__throw_logic_error("Wrong Minimum from Container");
+            }
+
+//            auto curr_node_iterator = std::min_element(open_set.begin(), open_set.end());
+            Node* curr_node = min_node;
             mst_set.insert(*curr_node);
-            open_set.erase(curr_node_iterator);
+            open_set.erase(min_node);
 
             // loop through all neighbours of current node
             for(int i =0; i< curr_node->neighbors.size(); i++)
