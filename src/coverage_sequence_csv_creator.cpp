@@ -1,11 +1,12 @@
-#define DEBUG 1
+#define DEBUG 0
 
 #include "auto_mapping_ros/coverage_planner.h"
 #include "auto_mapping_ros/graph_builder.h"
 #include "auto_mapping_ros/skeletonizer.h"
-#include "auto_mapping_ros//utils.h"
+#include "auto_mapping_ros/utils.h"
 
 static constexpr auto filepath = "/home/yash/yasht_ws/src/auto_mapping_ros/maps/levine.jpg";
+static constexpr auto csv_filepath = "/home/yash/yasht_ws/src/auto_mapping_ros/csv/sequence.csv";
 
 int main()
 {
@@ -26,9 +27,8 @@ int main()
     planner.compute_sequence();
     std::vector<std::array<int, 2>> sequence = planner.get_sequence();
 
-    std::cout << "size of sequence: " << sequence.size();
-
-    amr::visualize_sequence_on_graph(map, graph, sequence);
+    amr::write_sequence_to_csv(sequence, csv_filepath);
+    std::cout << "\nSize of sequence: " << sequence.size();
 
     return 0;
 }

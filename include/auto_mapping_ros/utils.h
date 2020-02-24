@@ -5,6 +5,9 @@
 #ifndef AUTO_MAPPING_ROS_UTILS_H
 #define AUTO_MAPPING_ROS_UTILS_H
 
+#include <boost/algorithm/string.hpp>
+#include <fstream>
+
 #include "auto_mapping_ros/graph_builder.h"
 #include "auto_mapping_ros/types.h"
 
@@ -112,6 +115,41 @@ void visualize_sequence_on_graph(
     namedWindow( "Visual Graph", cv::WINDOW_AUTOSIZE);
     imshow( "Visual Graph", visual_graph );
     cv::waitKey(0);
+}
+
+void write_sequence_to_csv(const std::vector<std::array<int,2>>& sequence, std::string filename)
+{
+    std::ofstream file_to_write;
+    file_to_write.open(filename);
+    if(!file_to_write)
+    {
+        throw std::runtime_error("Invalid Path for csv file.");
+    }
+    for(const auto& node: sequence)
+    {
+        file_to_write << node[0] << ", " << node[1] << "\n";
+    }
+    file_to_write.close();
+}
+
+void read_sequence_from_csv(std::vector<std::array<int,2>>* sequence, const std::string& filename = "sequence.csv")
+{
+    std::ifstream file(filename);
+    if(!file)
+    {
+        throw std::runtime_error("Invalid Path for csv file.");
+    }
+
+    std::string line = "";
+    while (getline(file, line))
+    {
+        std::vector<std::string> vec;
+        boost::algorithm::split(vec, line, boost::is_any_of(","));
+        std::array<int,2> node{};
+        node[0] = std::stod(vec[0]);
+        node[1] = std::stod(vec[1]);
+        sequence->emplace_back(node);
+    }
 }
 
 }

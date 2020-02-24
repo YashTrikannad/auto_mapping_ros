@@ -32,6 +32,11 @@ public:
         return sequence_;
     }
 
+    void save_sequence()
+    {
+
+    }
+
 private:
     Graph* graph_;
     Node* MST_root;
@@ -76,7 +81,6 @@ private:
                 std::__throw_logic_error("Wrong Minimum from Container");
             }
 
-//            auto curr_node_iterator = std::min_element(open_set.begin(), open_set.end());
             Node* curr_node = min_node;
             mst_set.insert(*curr_node);
             open_set.erase(min_node);

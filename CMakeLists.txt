@@ -146,6 +146,7 @@ add_executable(graph_builder_test testing/graph_builder_test.cpp)
 add_executable(graph_builder_blueprint_test testing/graph_builder_blueprint_test.cpp)
 add_executable(coverage_planner_test testing/coverage_planner_test.cpp)
 add_executable(coverage_planner_blueprint_test testing/coverage_planner_blueprint_test.cpp)
+add_executable(coverage_sequence_creator src/coverage_sequence_csv_creator.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -180,6 +181,11 @@ target_link_libraries(graph_builder_blueprint_test
         )
 
 target_link_libraries(coverage_planner_blueprint_test
+        ${OpenCV_LIBS}
+        -lconfig++
+        )
+
+target_link_libraries(coverage_sequence_creator
         ${OpenCV_LIBS}
         -lconfig++
         )
