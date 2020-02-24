@@ -12,6 +12,8 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  message_generation
+  fmt_star
 )
 
 find_package(OpenCV REQUIRED)
@@ -58,11 +60,10 @@ find_package(Eigen3 REQUIRED)
 # )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+#add_service_files(
+#  FILES
+#  plan_srv.srv
+#)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -72,10 +73,10 @@ find_package(Eigen3 REQUIRED)
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs
-# )
+ generate_messages(
+   DEPENDENCIES
+   std_msgs
+ )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -107,7 +108,7 @@ find_package(Eigen3 REQUIRED)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
+  INCLUDE_DIRS include
 #  LIBRARIES auto_mapping_ros
   CATKIN_DEPENDS roscpp rospy std_msgs
 #  DEPENDS system_lib
@@ -144,9 +145,10 @@ add_executable(${PROJECT_NAME}_node src/auto_mapping_ros_node.cpp)
 add_executable(skeletonizer_test testing/skeletonizer_test.cpp)
 add_executable(graph_builder_test testing/graph_builder_test.cpp)
 add_executable(graph_builder_blueprint_test testing/graph_builder_blueprint_test.cpp)
-add_executable(coverage_planner_test testing/coverage_planner_test.cpp)
+#add_executable(coverage_planner_test testing/coverage_planner_test.cpp)
 add_executable(coverage_planner_blueprint_test testing/coverage_planner_blueprint_test.cpp)
 add_executable(coverage_sequence_creator src/coverage_sequence_csv_creator.cpp)
+add_executable(global_plan_generator src/global_plan_generator.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -157,13 +159,14 @@ add_executable(coverage_sequence_creator src/coverage_sequence_csv_creator.cpp)
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(global_plan_generator fmt_star_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}_node
-  ${catkin_LIBRARIES}
-${OpenCV_LIBS}
--lconfig++
-)
+    ${catkin_LIBRARIES}
+    ${OpenCV_LIBS}
+    -lconfig++
+    )
 
 target_link_libraries(graph_builder_test
         ${OpenCV_LIBS}
@@ -186,6 +189,12 @@ target_link_libraries(coverage_planner_blueprint_test
         )
 
 target_link_libraries(coverage_sequence_creator
+        ${OpenCV_LIBS}
+        -lconfig++
+        )
+
+target_link_libraries(global_plan_generator
+        ${catkin_LIBRARIES}
         ${OpenCV_LIBS}
         -lconfig++
         )

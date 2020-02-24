@@ -22,6 +22,8 @@
 namespace amr
 {
 
+void visualize_graph(const cv::Mat& map, const Graph& graph);
+
 /// Class for constructing the graph from skeleton image and blueprint
 class GraphBuilder
 {

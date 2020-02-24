@@ -117,7 +117,8 @@ void visualize_sequence_on_graph(
     cv::waitKey(0);
 }
 
-void write_sequence_to_csv(const std::vector<std::array<int,2>>& sequence, std::string filename)
+template <typename T>
+void write_sequence_to_csv(const std::vector<std::array<T,2>>& sequence, std::string filename)
 {
     std::ofstream file_to_write;
     file_to_write.open(filename);
@@ -151,6 +152,8 @@ void read_sequence_from_csv(std::vector<std::array<int,2>>* sequence, const std:
         sequence->emplace_back(node);
     }
 }
+
+std::array<double, 2> translate_node_from_previous_map_to_ros_map(const std::array<int, 2>& node_on_previous_map);
 
 }
 
