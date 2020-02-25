@@ -42,4 +42,11 @@ struct NodeHasher
 
 using Graph = std::vector<Node>;
 
+struct Plan
+{
+    std::array<double, 2> start;
+    std::array<double, 2> end;
+    std::vector<std::array<double, 2>> plan;
+};
+
 #endif //AUTO_MAPPING_ROS_TYPES_H

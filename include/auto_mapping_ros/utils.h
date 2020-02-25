@@ -14,6 +14,14 @@
 namespace amr
 {
 
+void print_vector_of_nodes(const std::vector<std::array<double, 2>>& vector_of_nodes)
+{
+    for(const auto& node: vector_of_nodes)
+    {
+        std::cout << node[0] << ", " << node[1] << "\n";
+    }
+}
+
 void print_graph(const Graph& graph)
 {
     std::cout << "Printing out the Graph \n";
@@ -133,6 +141,26 @@ void write_sequence_to_csv(const std::vector<std::array<T,2>>& sequence, std::st
     file_to_write.close();
 }
 
+void write_plans_to_csv(const std::vector<Plan>& plans, std::string filename)
+{
+    std::ofstream file_to_write;
+    file_to_write.open(filename);
+    if(!file_to_write)
+    {
+        throw std::runtime_error("Invalid Path for csv file.");
+    }
+    for(const auto& plan: plans)
+    {
+        file_to_write << plan.start[0] << ", " << plan.start[1] << "\n";
+        file_to_write << plan.end[0] << ", " << plan.end[1] << "\n";
+        for(const auto& node: plan.plan)
+        {
+            file_to_write << node[0] << ", " << node[1] << ", ";
+        }
+    }
+    file_to_write.close();
+}
+
 void read_sequence_from_csv(std::vector<std::array<int,2>>* sequence, const std::string& filename = "sequence.csv")
 {
     std::ifstream file(filename);
@@ -153,7 +181,23 @@ void read_sequence_from_csv(std::vector<std::array<int,2>>* sequence, const std:
     }
 }
 
-std::array<double, 2> translate_node_from_previous_map_to_ros_map(const std::array<int, 2>& node_on_previous_map);
+std::array<double, 2> translate_indices_to_xy(const std::array<int, 2>& node_on_previous_map, double resolution)
+{
+    const double x = node_on_previous_map[0]*resolution;
+    const double y = node_on_previous_map[1]*resolution;
+    return std::array<double, 2>{y, x};
+}
+
+std::vector<std::array<double, 2>> translate_vector_of_indices_to_xy(
+        const std::vector<std::array<int, 2>>& vector_of_nodes, double resolution)
+{
+    std::vector<std::array<double, 2>> vector_of_locations{};
+    for(const auto& node: vector_of_nodes)
+    {
+        vector_of_locations.emplace_back(translate_indices_to_xy(node, resolution));
+    }
+    return vector_of_locations;
+}
 
 }
 
