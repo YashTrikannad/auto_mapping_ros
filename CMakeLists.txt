@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.1.0)
 project(auto_mapping_ros)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++11)
+add_compile_options(-std=c++14)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
 
 ## Find catkin macros and libraries
@@ -148,7 +148,7 @@ add_executable(graph_builder_blueprint_test testing/graph_builder_blueprint_test
 #add_executable(coverage_planner_test testing/coverage_planner_test.cpp)
 add_executable(coverage_planner_blueprint_test testing/coverage_planner_blueprint_test.cpp)
 add_executable(coverage_sequence_creator src/coverage_sequence_csv_creator.cpp)
-add_executable(global_plan_generator src/global_plan_generator.cpp)
+add_executable(global_planner_test testing/global_planner_test.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -159,7 +159,7 @@ add_executable(global_plan_generator src/global_plan_generator.cpp)
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(global_plan_generator fmt_star_generate_messages_cpp)
+add_dependencies(global_planner_test fmt_star_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}_node
@@ -193,7 +193,7 @@ target_link_libraries(coverage_sequence_creator
         -lconfig++
         )
 
-target_link_libraries(global_plan_generator
+target_link_libraries(global_planner_test
         ${catkin_LIBRARIES}
         ${OpenCV_LIBS}
         -lconfig++

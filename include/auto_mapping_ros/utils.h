@@ -1,7 +1,3 @@
-//
-// Created by yash on 2/19/20.
-//
-
 #ifndef AUTO_MAPPING_ROS_UTILS_H
 #define AUTO_MAPPING_ROS_UTILS_H
 
