@@ -4,7 +4,7 @@
 
 #include "auto_mapping_ros/global_planner.h"
 
-static constexpr auto csv_filepath = "/home/yash/yasht_ws/src/auto_mapping_ros/csv/ideal_sequence.csv";
+static constexpr auto csv_filepath = "/home/yash/yasht_ws/src/auto_mapping_ros/csv/sequence.csv";
 
 int main(int argc, char **argv)
 {

@@ -14,6 +14,8 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   message_generation
   fmt_star
+  geometry_msgs
+  tf2_ros
 )
 
 find_package(OpenCV REQUIRED)

@@ -34,7 +34,6 @@ public:
 
     void save_sequence()
     {
-
     }
 
 private:
