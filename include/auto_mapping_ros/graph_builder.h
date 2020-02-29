@@ -164,7 +164,7 @@ private:
 
         // get the centroid of figures.
         std::vector<cv::Point2f> mc(contours.size());
-        for(size_t i = 0; i<contours.size(); i++)
+        for(auto i = 0; i<contours.size(); i++)
         {
             mc[i] = cv::Point2f( mu[i].m10/mu[i].m00 , mu[i].m01/mu[i].m00 );
         }
@@ -363,7 +363,7 @@ private:
 
         double intermediate_x = current_node.x;
         double intermediate_y = current_node.y;
-        for (int v = 0; v < steps; v++)
+        for (size_t v = 0; v < steps; v++)
         {
             intermediate_x = intermediate_x + x_increment;
             intermediate_y = intermediate_y + y_increment;

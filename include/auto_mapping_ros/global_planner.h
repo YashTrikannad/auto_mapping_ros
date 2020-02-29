@@ -20,15 +20,24 @@ using PlannerNode = std::array<double, 2>;
 class GlobalPlanner
 {
 public:
+    /// Constructs GlobalPlanner (Does not initialize the sequence)
+    /// @param node_handle
+    GlobalPlanner(std::shared_ptr<ros::NodeHandle> node_handle):
+            current_goal_index_(0),
+            node_handle_(node_handle),
+            client_(node_handle_->serviceClient<fmt_star::plan_srv>("FMTstar_search"))
+    {
+    };
+
     /// Constructor when sequence is already expressed in ros map-coordinates
     /// @param sequence
     /// @param node_handle
     /// @param resolution
     GlobalPlanner(const std::vector<std::array<int, 2>>& sequence,
-            std::unique_ptr<ros::NodeHandle>&& node_handle, double resolution):
+                  std::shared_ptr<ros::NodeHandle> node_handle, double resolution):
             current_goal_index_(0),
             sequence_(amr::translate_vector_of_indices_to_xy(sequence, resolution)),
-            node_handle_(std::move(node_handle)),
+            node_handle_(node_handle),
             client_(node_handle_->serviceClient<fmt_star::plan_srv>("FMTstar_search"))
     {
     };
@@ -37,10 +46,10 @@ public:
     /// @param sequence
     /// @param node_handle
     GlobalPlanner(const std::vector<std::array<double, 2>>& sequence,
-                  std::unique_ptr<ros::NodeHandle> node_handle):
+                  std::shared_ptr<ros::NodeHandle> node_handle):
             current_goal_index_(0),
             sequence_(sequence),
-            node_handle_(std::move(node_handle)),
+            node_handle_(node_handle),
             client_(node_handle_->serviceClient<fmt_star::plan_srv>("FMTstar_search"))
     {
     };
@@ -50,18 +59,33 @@ public:
     /// @return
     std::vector<PlannerNode> get_next_plan(const PlannerNode &current_position)
     {
-        std::cout<< "HI1" << std::endl;
+        if(sequence_.empty())
+        {
+            ROS_ERROR("The coverage sequence is empty. It needs to be set before calling get_next_plan.");
+        }
         update_start(current_position);
-        std::cout<< "HI1" << std::endl;
         update_end();
-        std::cout<< "HI1" << std::endl;
         return find_plan();
     }
 
-    /// Clears the current sequence
-    void refresh_sequence()
+    /// Initializes the Global Planner with the sequence (coordinates of sequence already same as in ROS Map)
+    /// @param sequence
+    void init(const std::vector<std::array<double, 2>>& sequence)
     {
         sequence_.clear();
+        sequence_ = sequence;
+        ROS_INFO("Global Planner Initialized");
+    }
+
+    /// Initializes the Global Planner by first translating non ros sequence in compatible format and then initializes
+    /// the sequence
+    /// @param sequence
+    /// @param resolution
+    void translate_and_init(const std::vector<std::array<int, 2>>& sequence, double resolution)
+    {
+        sequence_.clear();
+        sequence_ = amr::translate_vector_of_indices_to_xy(sequence, resolution);
+        ROS_INFO("Global Planner Initialized");
     }
 
 private:
@@ -71,9 +95,11 @@ private:
     std::vector<PlannerNode> sequence_;
     fmt_star::plan_srv srv_message_;
 
-    std::unique_ptr<ros::NodeHandle> node_handle_;
+    std::shared_ptr<ros::NodeHandle> node_handle_;
     ros::ServiceClient client_;
 
+    /// Update the start position as the current position
+    /// @param current_position
     void update_start(const PlannerNode &current_position)
     {
         start_.pose.position.x = current_position[0];
@@ -85,6 +111,7 @@ private:
         start_.pose.orientation.z = 1;
     }
 
+    /// Update the end position to the next index in the sequence
     void update_end()
     {
         current_goal_index_++;
@@ -97,6 +124,7 @@ private:
         end_.pose.orientation.z = 1;
     }
 
+    /// Finds and returns the plan between start and end by calling the planner service
     std::vector<PlannerNode> find_plan()
     {
         srv_message_.request.start_position = start_;

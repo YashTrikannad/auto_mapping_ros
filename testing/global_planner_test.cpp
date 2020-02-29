@@ -10,7 +10,7 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "global_planner");
 
-    auto nh = std::make_unique<ros::NodeHandle>(ros::NodeHandle());
+    auto nh = std::make_shared<ros::NodeHandle>(ros::NodeHandle());
     ros::Publisher vis_pub = nh->advertise<visualization_msgs::MarkerArray>("coverage_points", 0);
 
     const double resolution = 0.05;
@@ -49,7 +49,7 @@ int main(int argc, char **argv)
     }
     vis_pub.publish(marker_array);
 
-    amr::GlobalPlanner planner(coverage_sequence, std::move(nh));
+    amr::GlobalPlanner planner(coverage_sequence, nh);
 
     for(auto j=0; j<coverage_sequence.size()-1; j++)
     {
