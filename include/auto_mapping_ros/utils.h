@@ -195,6 +195,12 @@ std::vector<std::array<double, 2>> translate_vector_of_indices_to_xy(
     return vector_of_locations;
 }
 
+template <typename Arithmetic>
+double distance(const std::array<Arithmetic, 2>& node1, const std::array<Arithmetic, 2>& node2)
+{
+    return sqrt(pow(node1[0]-node2[0], 2) + pow(node1[1]-node2[1], 2));
+}
+
 }
 
 

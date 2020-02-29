@@ -34,7 +34,6 @@ public:
 
     void save_sequence()
     {
-
     }
 
 private:
@@ -86,7 +85,7 @@ private:
             open_set.erase(min_node);
 
             // loop through all neighbours of current node
-            for(int i =0; i< curr_node->neighbors.size(); i++)
+            for(auto i =0; i< curr_node->neighbors.size(); i++)
             {
                 // if neighbour not already in mst
                 if(mst_set.find(*curr_node->neighbors[i]) == mst_set.end())
@@ -119,9 +118,8 @@ private:
 
         return res;
     }
-
 };
 
 }
 
-#endif AUTO_MAPPING_ROS_COVERAGE_PLANNER_H
+#endif
