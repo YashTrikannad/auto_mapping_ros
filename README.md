@@ -29,7 +29,7 @@ Running your code. There are a lot of test codes to test specific modules. Examp
 </p>
 
 
-To run the global planner module, you'll also need to run the FMT* Sevice:
+To run the auto mapping module once the sequence is saved, you'll also need to run the FMT* Sevice:
 
 In Terminal 1, launch the simulator:
 ```
@@ -41,5 +41,5 @@ roslaunch fmt_star fmt_star_service.launch
 ```
 In Terminal 3, run your global planner test:
 ```
-rosrun auto_mapping_ros global_planner_test
+roslaunch auto_mapping_ros auto_mapping_ros.launch
 ```
