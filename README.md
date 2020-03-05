@@ -24,6 +24,11 @@ catkin_make
 
 Running your code. There are a lot of test codes to test specific modules. Example of one module shown below. (Skeletonization, Graph Builder and Coverage Planner do not require ROS so they can be run like a normal C++ file. They are not ROS nodes) 
 
+
+<p align="center"><img src="media/coverage.gif" width="400" height="600">
+</p>
+
+
 To run the global planner module, you'll also need to run the FMT* Sevice:
 
 In Terminal 1, launch the simulator:
@@ -38,7 +43,3 @@ In Terminal 3, run your global planner test:
 ```
 rosrun auto_mapping_ros global_planner_test
 ```
-
-
-<p align="center"><img src="media/coverage.gif" width="250" height="500">
-</p>
