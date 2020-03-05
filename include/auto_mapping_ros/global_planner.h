@@ -172,7 +172,8 @@ private:
     {
         srv_message_.request.start_position = start_;
         srv_message_.request.end_position = end_;
-        srv_message_.request.update_map = true;
+        srv_message_.request.update_samples = true;
+        srv_message_.request.update_map = false;
 
         std::cout << "HI" << std::endl;
 

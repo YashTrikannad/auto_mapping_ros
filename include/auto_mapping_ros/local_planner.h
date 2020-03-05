@@ -130,7 +130,7 @@ private:
         drive_msg.header.frame_id = "base_link";
         drive_msg.drive.steering_angle = steering_angle > 0.4? steering_angle: ((steering_angle<-0.4)? -0.4: steering_angle);
         ROS_INFO("steering angle: %f", steering_angle);
-        drive_msg.drive.speed = 0.5;
+        drive_msg.drive.speed = 0.3;
         drive_pub_.publish(drive_msg);
     }
 };
