@@ -40,5 +40,5 @@ rosrun auto_mapping_ros global_planner_test
 ```
 
 
-<p align="center"><img src="media/ideal_loop.gif" width="700" height="500">
+<p align="center"><img src="media/coverage.gif" width="250" height="500">
 </p>
