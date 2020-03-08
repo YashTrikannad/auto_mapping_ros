@@ -5,6 +5,10 @@ This project is still under development and the goal is to develop a ROS service
 
 **How to run this code:**
 
+Install dependencies
+```
+sudo apt-get install libconfig++-dev
+```
 
 This repository depends on a planner service. You can use the FMT* Planning Service from my repository here.
 ```
