@@ -1,15 +1,18 @@
 #define DEBUG 0
 
+#include <ros/ros.h>
+#include <ros/package.h>
+
 #include "auto_mapping_ros/coverage_planner.h"
 #include "auto_mapping_ros/graph_builder.h"
 #include "auto_mapping_ros/skeletonizer.h"
 #include "auto_mapping_ros/utils.h"
 
-static constexpr auto filepath = "/home/yash/yasht_ws/src/auto_mapping_ros/maps/levine.jpg";
-static constexpr auto csv_filepath = "/home/yash/yasht_ws/src/auto_mapping_ros/csv/sequence.csv";
-
 int main()
 {
+    const auto filepath = ros::package::getPath("auto_mapping_ros") + "/maps/levine.jpg";
+    const auto csv_filepath = ros::package::getPath("auto_mapping_ros") + "/csv/sequence.csv";
+
     amr::Skeletonizer processor;
     processor.read_map(filepath);
     cv::Mat skeleton = processor.skeletonize();

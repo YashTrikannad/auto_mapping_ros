@@ -10,6 +10,7 @@ add_compile_options(-std=c++14)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  roslib
   rospy
   std_msgs
   message_generation
@@ -112,7 +113,7 @@ find_package(Eigen3 REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES auto_mapping_ros
-  CATKIN_DEPENDS roscpp rospy std_msgs
+  CATKIN_DEPENDS roscpp rospy roslib std_msgs
 #  DEPENDS system_lib
 )
 
@@ -171,26 +172,31 @@ target_link_libraries(${PROJECT_NAME}_node
     )
 
 target_link_libraries(graph_builder_test
+        ${catkin_LIBRARIES}
         ${OpenCV_LIBS}
         -lconfig++
         )
 
 target_link_libraries(skeletonizer_test
+        ${catkin_LIBRARIES}
         ${OpenCV_LIBS}
         -lconfig++
         )
 
 target_link_libraries(graph_builder_blueprint_test
+        ${catkin_LIBRARIES}
         ${OpenCV_LIBS}
         -lconfig++
         )
 
 target_link_libraries(coverage_planner_blueprint_test
+        ${catkin_LIBRARIES}
         ${OpenCV_LIBS}
         -lconfig++
         )
 
 target_link_libraries(coverage_sequence_creator
+        ${catkin_LIBRARIES}
         ${OpenCV_LIBS}
         -lconfig++
         )

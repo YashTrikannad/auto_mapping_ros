@@ -2,12 +2,17 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <memory>
 
+#include <ros/ros.h>
+#include <ros/package.h>
+
 #include "auto_mapping_ros/global_planner.h"
 
 static constexpr auto csv_filepath = "/home/yash/yasht_ws/src/auto_mapping_ros/csv/sequence.csv";
 
 int main(int argc, char **argv)
 {
+    const auto csv_filepath = ros::package::getPath("auto_mapping_ros") + "/csv/sequence.csv";
+
     ros::init(argc, argv, "global_planner");
 
     auto nh = std::make_shared<ros::NodeHandle>(ros::NodeHandle());

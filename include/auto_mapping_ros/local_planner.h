@@ -1,6 +1,9 @@
 #ifndef AUTO_MAPPING_ROS_LOCAL_PLANNER_H
 #define AUTO_MAPPING_ROS_LOCAL_PLANNER_H
 
+#include <ros/ros.h>
+#include <ros/package.h>
+
 #include <ackermann_msgs/AckermannDriveStamped.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2_ros/transform_listener.h>
@@ -13,7 +16,6 @@
 
 static const auto localized_pose_topic = "/gt_pose";
 static const auto drive_topic = "nav";
-static const auto csv_filepath = "/home/yash/yasht_ws/src/auto_mapping_ros/csv/sequence.csv";
 
 namespace amr
 {
@@ -36,6 +38,7 @@ public:
         node_handle_->getParam("/distance_threshold", distance_threshold_);
         ROS_INFO("Starting auto_mapping_ros node ...");
         std::vector<std::array<int, 2>> coverage_sequence_non_ros_map;
+        const auto csv_filepath = ros::package::getPath("auto_mapping_ros") + "/csv/sequence.csv";
         amr::read_sequence_from_csv(&coverage_sequence_non_ros_map, csv_filepath);
         coverage_sequence_ = global_planner_.translate_and_init(coverage_sequence_non_ros_map, resolution_, distance_threshold_);
         ROS_INFO("auto_mapping_ros node is now running!");
@@ -45,7 +48,6 @@ public:
     /// @param pose_msg
     void pose_callback(const geometry_msgs::PoseStamped::ConstPtr &pose_msg)
     {
-        ROS_INFO("Pose Updated!");
         last_updated_pose_[0] = pose_msg->pose.position.x;
         last_updated_pose_[1] = pose_msg->pose.position.y;
         const auto new_plan = global_planner_.update_current_position(last_updated_pose_);
@@ -129,7 +131,7 @@ private:
         drive_msg.header.stamp = ros::Time::now();
         drive_msg.header.frame_id = "base_link";
         drive_msg.drive.steering_angle = steering_angle > 0.4? steering_angle: ((steering_angle<-0.4)? -0.4: steering_angle);
-        ROS_INFO("steering angle: %f", steering_angle);
+        ROS_DEBUG("steering angle: %f", steering_angle);
         drive_msg.drive.speed = 0.3;
         drive_pub_.publish(drive_msg);
     }

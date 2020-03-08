@@ -101,7 +101,6 @@ public:
     {
         current_position_ = current_position;
         std::vector<PlannerNode> new_plan{};
-        std::cout << "Distance: " << distance(current_position_, sequence_[current_tracking_node_index_]) << "\n";
         if(distance(current_position_, sequence_[current_tracking_node_index_]) < distance_threshold_ || first_plan_)
         {
             ROS_INFO("Getting New Plan.");
@@ -174,8 +173,6 @@ private:
         srv_message_.request.end_position = end_;
         srv_message_.request.update_samples = true;
         srv_message_.request.update_map = false;
-
-        std::cout << "HI" << std::endl;
 
         std::vector<PlannerNode> current_plan{};
         if(client_.call(srv_message_))
