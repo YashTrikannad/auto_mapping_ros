@@ -10,10 +10,11 @@ Install dependencies
 sudo apt-get install libconfig++-dev
 ```
 
-This repository depends on a simulator and planner service. You can use the FMT* Planning Service from my repository here.
+You will need to build the simulator. You can follow the tutorial [here](https://github.com/YashTrikannad/f110-simulator-multi-agent) to build the simulator.
+
+This repository depends on a planner service. You can use the FMT* Planning Service from my repository here.
 ```
 cd catkin_ws/src
-git clone https://github.com/YashTrikannad/f110-simulator-multi-agent.git
 git clone https://github.com/YashTrikannad/fmt_star_ros.git
 cd ..
 catkin_make
