@@ -5,6 +5,12 @@ This project is still under development and the goal is to develop a ROS service
 
 **How to run this code:**
 
+Install dependencies
+```
+sudo apt-get install libconfig++-dev
+```
+
+You will need to build the simulator. You can follow the tutorial [here](https://github.com/YashTrikannad/f110-simulator-multi-agent) to build the simulator.
 
 This repository depends on a planner service. You can use the FMT* Planning Service from my repository here.
 ```
@@ -22,6 +28,12 @@ cd ..
 catkin_make
 ```
 
+Source the ROS environment before launching ROS nodes
+```
+cd catkin_ws
+source devel/setup.bash
+```
+
 Running your code. There are a lot of test codes to test specific modules. Example of one module shown below. (Skeletonization, Graph Builder and Coverage Planner do not require ROS so they can be run like a normal C++ file. They are not ROS nodes) 
 
 
@@ -29,11 +41,11 @@ Running your code. There are a lot of test codes to test specific modules. Examp
 </p>
 
 
-To run the global planner module, you'll also need to run the FMT* Sevice:
+To run the auto mapping module once the sequence is saved, you'll also need to run the FMT* Sevice:
 
 In Terminal 1, launch the simulator:
 ```
-roslaunch racecar_simulator simulator.launch
+roslaunch f110_simulator simulator.launch
 ```
 In Terminal 2, launch the service:
 ```
@@ -41,5 +53,5 @@ roslaunch fmt_star fmt_star_service.launch
 ```
 In Terminal 3, run your global planner test:
 ```
-rosrun auto_mapping_ros global_planner_test
+roslaunch auto_mapping_ros auto_mapping_ros.launch
 ```
