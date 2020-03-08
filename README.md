@@ -10,9 +10,10 @@ Install dependencies
 sudo apt-get install libconfig++-dev
 ```
 
-This repository depends on a planner service. You can use the FMT* Planning Service from my repository here.
+This repository depends on a simulator and planner service. You can use the FMT* Planning Service from my repository here.
 ```
 cd catkin_ws/src
+git clone https://github.com/YashTrikannad/f110-simulator-multi-agent.git
 git clone https://github.com/YashTrikannad/fmt_star_ros.git
 cd ..
 catkin_make
@@ -26,6 +27,12 @@ cd ..
 catkin_make
 ```
 
+Source the ROS environment before launching ROS nodes
+```
+cd catkin_ws
+source devel/setup.bash
+```
+
 Running your code. There are a lot of test codes to test specific modules. Example of one module shown below. (Skeletonization, Graph Builder and Coverage Planner do not require ROS so they can be run like a normal C++ file. They are not ROS nodes) 
 
 
@@ -37,7 +44,7 @@ To run the auto mapping module once the sequence is saved, you'll also need to r
 
 In Terminal 1, launch the simulator:
 ```
-roslaunch racecar_simulator simulator.launch
+roslaunch f110_simulator simulator.launch
 ```
 In Terminal 2, launch the service:
 ```
