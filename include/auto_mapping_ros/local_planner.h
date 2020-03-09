@@ -14,9 +14,6 @@
 #include "auto_mapping_ros/global_planner.h"
 #include "auto_mapping_ros/utils.h"
 
-static const auto localized_pose_topic = "/gt_pose";
-static const auto drive_topic = "nav";
-
 namespace amr
 {
 
@@ -25,20 +22,33 @@ class LocalPlanner
 public:
     LocalPlanner():
             node_handle_(std::make_shared<ros::NodeHandle>(ros::NodeHandle())),
-            pose_sub_(node_handle_->subscribe(localized_pose_topic, 5, &LocalPlanner::pose_callback, this)),
-            drive_pub_(node_handle_->advertise<ackermann_msgs::AckermannDriveStamped>(drive_topic, 1)),
             tf_listener_(tf_buffer_),
             global_planner_(node_handle_),
             coverage_sequence_(),
             last_updated_pose_(),
             current_plan_()
     {
-        node_handle_->getParam("/lookahead_distance", lookahead_distance_);
-        node_handle_->getParam("/resolution", resolution_);
-        node_handle_->getParam("/distance_threshold", distance_threshold_);
+        std::string package_name, csv_relative_filepath;
+        node_handle_->getParam("package_name", package_name);
+        node_handle_->getParam("csv_filepath", csv_relative_filepath);
+
+        std::string pose_topic, drive_topic;
+        node_handle_->getParam("pose_topic", pose_topic);
+        node_handle_->getParam("drive_topic", drive_topic);
+
+        node_handle_->getParam("base_frame", base_frame_);
+        node_handle_->getParam("map_frame", map_frame_);
+
+        pose_sub_ = node_handle_->subscribe(pose_topic, 5, &LocalPlanner::pose_callback, this);
+        drive_pub_ = node_handle_->advertise<ackermann_msgs::AckermannDriveStamped>(drive_topic, 1);
+
+        node_handle_->getParam("lookahead_distance", lookahead_distance_);
+        node_handle_->getParam("resolution", resolution_);
+        node_handle_->getParam("distance_threshold", distance_threshold_);
+
         ROS_INFO("Starting auto_mapping_ros node ...");
         std::vector<std::array<int, 2>> coverage_sequence_non_ros_map;
-        const auto csv_filepath = ros::package::getPath("auto_mapping_ros") + "/csv/sequence.csv";
+        const auto csv_filepath = ros::package::getPath(package_name) + csv_relative_filepath;
         amr::read_sequence_from_csv(&coverage_sequence_non_ros_map, csv_filepath);
         coverage_sequence_ = global_planner_.translate_and_init(coverage_sequence_non_ros_map, resolution_, distance_threshold_);
         ROS_INFO("auto_mapping_ros node is now running!");
@@ -74,11 +84,14 @@ private:
     PlannerNode last_updated_pose_;
     std::vector<PlannerNode> current_plan_;
 
+    std::string base_frame_;
+    std::string map_frame_;
+
     std::vector<PlannerNode> transform(const std::vector<PlannerNode>& reference_way_points,
                                        const PlannerNode& current_way_point)
     {
         geometry_msgs::TransformStamped map_to_base_link;
-        map_to_base_link = tf_buffer_.lookupTransform("base_link", "map", ros::Time(0));
+        map_to_base_link = tf_buffer_.lookupTransform(base_frame_, map_frame_, ros::Time(0));
 
         std::vector<PlannerNode> transformed_way_points;
         for(const auto& reference_way_point: reference_way_points)
@@ -129,7 +142,7 @@ private:
 
         ackermann_msgs::AckermannDriveStamped drive_msg;
         drive_msg.header.stamp = ros::Time::now();
-        drive_msg.header.frame_id = "base_link";
+        drive_msg.header.frame_id = base_frame_;
         drive_msg.drive.steering_angle = steering_angle > 0.4? steering_angle: ((steering_angle<-0.4)? -0.4: steering_angle);
         ROS_DEBUG("steering angle: %f", steering_angle);
         drive_msg.drive.speed = 0.3;

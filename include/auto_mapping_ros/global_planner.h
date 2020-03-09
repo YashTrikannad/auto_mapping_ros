@@ -25,10 +25,12 @@ public:
     GlobalPlanner(std::shared_ptr<ros::NodeHandle> node_handle):
             current_tracking_node_index_(0),
             current_goal_index_(0),
-            node_handle_(node_handle),
-            client_(node_handle_->serviceClient<fmt_star::plan_srv>("FMTstar_search")),
+            node_handle_(std::move(node_handle)),
             first_plan_(true)
     {
+        std::string planner_name;
+        node_handle_->getParam("planner_name", planner_name);
+        client_ = node_handle_->serviceClient<fmt_star::plan_srv>(planner_name);
     };
 
     /// Constructor when sequence is already expressed in ros map-coordinates
@@ -40,7 +42,7 @@ public:
             current_tracking_node_index_(0),
             current_goal_index_(0),
             sequence_(amr::translate_vector_of_indices_to_xy(sequence, resolution)),
-            node_handle_(node_handle),
+            node_handle_(std::move(node_handle)),
             client_(node_handle_->serviceClient<fmt_star::plan_srv>("FMTstar_search")),
             first_plan_(true)
     {
@@ -49,12 +51,12 @@ public:
     /// Constructor when sequence is not expressed in ros map-coordinates
     /// @param sequence
     /// @param node_handle
-    GlobalPlanner(const std::vector<std::array<double, 2>>& sequence,
+    GlobalPlanner(std::vector<std::array<double, 2>>  sequence,
                   std::shared_ptr<ros::NodeHandle> node_handle):
             current_tracking_node_index_(0),
             current_goal_index_(0),
-            sequence_(sequence),
-            node_handle_(node_handle),
+            sequence_(std::move(sequence)),
+            node_handle_(std::move(node_handle)),
             client_(node_handle_->serviceClient<fmt_star::plan_srv>("FMTstar_search")),
             first_plan_(true)
     {
