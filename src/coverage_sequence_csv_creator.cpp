@@ -25,6 +25,7 @@ int main()
     amr::GraphBuilder builder(skeleton, map);
     builder.build_graph();
     auto graph = builder.get_graph();
+    std::cout << "Hi" << std::endl;
 
     amr::CoveragePlanner planner(&graph);
     planner.compute_sequence();

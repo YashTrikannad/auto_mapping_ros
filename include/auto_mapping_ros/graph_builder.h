@@ -1,6 +1,9 @@
 #ifndef AUTO_MAPPING_ROS_GRAPH_BUILDER_H
 #define AUTO_MAPPING_ROS_GRAPH_BUILDER_H
 
+#include <ros/ros.h>
+#include <ros/package.h>
+
 #include <array>
 #include <iostream>
 #include <libconfig.h++>
@@ -42,7 +45,10 @@ public:
         libconfig::Config cfg;
         try
         {
-            cfg.readFile("/home/yash/yasht_ws/src/auto_mapping_ros/config/graph_builder.cfg");
+            const std::string filename = ros::package::getPath("auto_mapping_ros") + "/config/graph_builder.cfg";
+            char *tab2 = new char [filename.length()+1];
+            strcpy (tab2, filename.c_str());
+            cfg.readFile(tab2);
         }
         catch(const libconfig::FileIOException &fioex)
         {

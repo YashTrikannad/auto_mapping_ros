@@ -1,3 +1,7 @@
 /cmake-build-debug
 /.idea
 /csv
+
+include/auto_mapping_ros/.idea/
+include/auto_mapping_ros/.local_planner.h.swp
+include/auto_mapping_ros/cmake-build-debug/
