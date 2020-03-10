@@ -1,11 +1,11 @@
 # Config file for the Auto Mapping ROS node
 package_name: "auto_mapping_ros"
 
-csv_filepath: "/csv/sequence.csv"
+csv_filepath: "/csv/sequence"
 
 # Parameter for pure pursuit algorithm
 # A good estimate is 0-2r (According to the implementation explanation given in RI, CMU)
-lookahead_distance : 0.4
+lookahead_distance : 0.5
 
 # Map Resolution (meters/pixel)
 resolution : 0.05
@@ -14,12 +14,15 @@ resolution : 0.05
 distance_threshold : 3.0
 
 # Topics to publish and subscribe to
-pose_topic: "gt_pose_1"
-drive_topic: "nav_1"
+pose_topic: "gt_pose"
+drive_topic: "nav"
 
 # Frame Names
-base_frame: "racecar1/base_link"
+base_frame: "base_link"
 map_frame: "map"
 
 # Global Planner Name
 planner_name: "FMTstar_search"
+
+# Velocity of the cars
+velocity: 0.2

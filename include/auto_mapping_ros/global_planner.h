@@ -30,7 +30,7 @@ public:
     {
         std::string planner_name;
         node_handle_->getParam("planner_name", planner_name);
-        client_ = node_handle_->serviceClient<fmt_star::plan_srv>(planner_name);
+        client_ = node_handle_->serviceClient<fmt_star::plan_srv>(planner_name, true);
     };
 
     /// Constructor when sequence is already expressed in ros map-coordinates
@@ -43,9 +43,11 @@ public:
             current_goal_index_(0),
             sequence_(amr::translate_vector_of_indices_to_xy(sequence, resolution)),
             node_handle_(std::move(node_handle)),
-            client_(node_handle_->serviceClient<fmt_star::plan_srv>("FMTstar_search")),
             first_plan_(true)
     {
+        std::string planner_name;
+        node_handle_->getParam("planner_name", planner_name);
+        client_ = node_handle_->serviceClient<fmt_star::plan_srv>(planner_name, true);
     };
 
     /// Constructor when sequence is not expressed in ros map-coordinates
@@ -57,9 +59,11 @@ public:
             current_goal_index_(0),
             sequence_(std::move(sequence)),
             node_handle_(std::move(node_handle)),
-            client_(node_handle_->serviceClient<fmt_star::plan_srv>("FMTstar_search")),
             first_plan_(true)
     {
+        std::string planner_name;
+        node_handle_->getParam("planner_name", planner_name);
+        client_ = node_handle_->serviceClient<fmt_star::plan_srv>(planner_name, true);
     };
 
     /// Find Path between current position and the next position in the sequence
@@ -105,7 +109,7 @@ public:
         std::vector<PlannerNode> new_plan{};
         if(distance(current_position_, sequence_[current_tracking_node_index_]) < distance_threshold_ || first_plan_)
         {
-            ROS_INFO("Getting New Plan.");
+            ROS_DEBUG("Getting New Plan.");
             if(first_plan_)
             {
                 first_plan_ = false;
@@ -117,7 +121,8 @@ public:
             new_plan = get_next_plan(current_position_);
             if(current_tracking_node_index_ == sequence_.size()-1)
             {
-                ROS_INFO("Sequence Explored!");
+                client_.shutdown();
+                ROS_INFO("Global Planner Client is now shutting down as the sequence has been explored.");
             }
         }
         return new_plan;
@@ -142,8 +147,7 @@ private:
     /// @param current_position
     void update_start(const PlannerNode &current_position)
     {
-        ROS_INFO("Start Position");
-        std::cout << current_position[0] << " " << current_position[1] << "\n";
+        ROS_DEBUG("Start Position: %f, %f", current_position[0], current_position[1]);
         start_.pose.position.x = current_position[0];
         start_.pose.position.y = current_position[1];
         start_.pose.position.z = 0;
@@ -156,8 +160,7 @@ private:
     /// Update the end position to the next index in the sequence
     void update_end()
     {
-        ROS_INFO("End Position");
-        std::cout << sequence_[current_goal_index_][0] << " " << sequence_[current_goal_index_][1] << "\n";
+        ROS_DEBUG("End Position: %f, %f", sequence_[current_goal_index_][0], sequence_[current_goal_index_][1]);
         end_.pose.position.x = sequence_[current_goal_index_][0];
         end_.pose.position.y = sequence_[current_goal_index_][1];
         end_.pose.position.z = 0;

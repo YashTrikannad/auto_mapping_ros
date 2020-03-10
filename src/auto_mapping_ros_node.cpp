@@ -2,10 +2,13 @@
 
 #include "auto_mapping_ros/local_planner.h"
 
+static constexpr int n_agents = 2;
+
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "auto_mapping_ros_node");
-    amr::LocalPlanner local_planner;
+    ros::NodeHandle nh;
+    std::array<amr::LocalPlanner, n_agents> local_planner;
     ros::spin();
     return 0;
 }

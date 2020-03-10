@@ -28,15 +28,21 @@ public:
             last_updated_pose_(),
             current_plan_()
     {
+        local_planner_id_ = ++local_planner_counter_;
+
         std::string package_name, csv_relative_filepath;
         node_handle_->getParam("package_name", package_name);
         node_handle_->getParam("csv_filepath", csv_relative_filepath);
+        csv_relative_filepath = csv_relative_filepath + "_" + std::to_string(local_planner_id_) + ".csv";
 
         std::string pose_topic, drive_topic;
         node_handle_->getParam("pose_topic", pose_topic);
+        pose_topic = pose_topic + "_" + std::to_string(local_planner_id_);
         node_handle_->getParam("drive_topic", drive_topic);
+        drive_topic = drive_topic + "_" + std::to_string(local_planner_id_);
 
         node_handle_->getParam("base_frame", base_frame_);
+        base_frame_ = "racecar" + std::to_string(local_planner_id_)  + "/" + base_frame_;
         node_handle_->getParam("map_frame", map_frame_);
 
         pose_sub_ = node_handle_->subscribe(pose_topic, 5, &LocalPlanner::pose_callback, this);
@@ -45,8 +51,8 @@ public:
         node_handle_->getParam("lookahead_distance", lookahead_distance_);
         node_handle_->getParam("resolution", resolution_);
         node_handle_->getParam("distance_threshold", distance_threshold_);
+        node_handle_->getParam("velocity", velocity_);
 
-        ROS_INFO("Starting auto_mapping_ros node ...");
         std::vector<std::array<int, 2>> coverage_sequence_non_ros_map;
         const auto csv_filepath = ros::package::getPath(package_name) + csv_relative_filepath;
         amr::read_sequence_from_csv(&coverage_sequence_non_ros_map, csv_filepath);
@@ -69,6 +75,9 @@ public:
     }
 
 private:
+    int local_planner_id_;
+    static int local_planner_counter_;
+
     std::shared_ptr<ros::NodeHandle> node_handle_;
     ros::Subscriber pose_sub_;
     ros::Publisher drive_pub_;
@@ -78,6 +87,7 @@ private:
     double distance_threshold_;
     double lookahead_distance_;
     double resolution_;
+    double velocity_;
 
     GlobalPlanner global_planner_;
     std::vector<PlannerNode> coverage_sequence_;
@@ -145,10 +155,12 @@ private:
         drive_msg.header.frame_id = base_frame_;
         drive_msg.drive.steering_angle = steering_angle > 0.4? steering_angle: ((steering_angle<-0.4)? -0.4: steering_angle);
         ROS_DEBUG("steering angle: %f", steering_angle);
-        drive_msg.drive.speed = 0.3;
+        drive_msg.drive.speed = velocity_;
         drive_pub_.publish(drive_msg);
     }
 };
+
+int LocalPlanner::local_planner_counter_ = 0;
 
 } // namespace amr
 
