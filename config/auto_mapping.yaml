@@ -14,11 +14,11 @@ resolution : 0.05
 distance_threshold : 3.0
 
 # Topics to publish and subscribe to
-pose_topic: "gt_pose"
-drive_topic: "nav"
+pose_topic: "gt_pose_1"
+drive_topic: "nav_1"
 
 # Frame Names
-base_frame: "base_link"
+base_frame: "racecar1/base_link"
 map_frame: "map"
 
 # Global Planner Name
