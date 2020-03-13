@@ -37,7 +37,7 @@ source devel/setup.bash
 Running your code. There are a lot of test codes to test specific modules. Example of one module shown below. (Skeletonization, Graph Builder and Coverage Planner do not require ROS so they can be run like a normal C++ file. They are not ROS nodes) 
 
 
-<p align="center"><img src="media/coverage.gif" width="400" height="600">
+<p align="center"><img src="media/multi_agent.gif" width="400" height="600">
 </p>
 
 
