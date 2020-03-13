@@ -1,0 +1,40 @@
+# Config File with ROS Parameters
+
+# No. of Samples for the FMT* Planner
+n_samples: 10000
+
+# Max Radius between two nodes to be qualified as neighbours (in m)
+near_radius: 0.8
+
+# Obstacle Inflation Radius (Note: Calculated In cells)
+obstacle_inflation_radius: 5
+
+# No. of Collision checks between 2 points
+n_collision_checks: 5
+
+# Goal Region Definition (Tolerance)
+goal_tolerance: 0.5
+
+# h/g ratio Heursitic->Cost-from-Root Ratio in calculating costs
+# Note: For asymptotic optimality, keep the value between 0->1. For no heuristic, make it 0
+hg_ratio: 1.0
+
+# Rectangle for Uniform Sampling of Nodes with respect to current pose of robot in map(in m)
+# [Valid only if minimal_sampling is false]
+x_min: -20
+x_max: 20
+y_min: -20
+y_max: 20
+
+# Node Construction and Near Node Calculations
+online: true
+
+# Enable Visualization
+visualization: false
+
+# Minimal Sampling - True if you want sampling to be done with minimal tolerance (Do only along line
+# of sight between goal and start)
+minimal_sampling: true
+
+# When minimal sampling is on, the amount of sampling size around the (start-goal) rectangle (in meters)
+sampling_tolerance: 3.0

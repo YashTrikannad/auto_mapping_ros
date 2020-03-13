@@ -1,4 +1,9 @@
 <launch>
+<!--    Launch FMT STAR action server-->
+    <rosparam command="load" file="$(find auto_mapping_ros)/config/fmt_star_config.yaml" />
+    <node pkg="fmt_star" name="fmt_star_server" type="fmt_star_server" output="screen"/>
+
+<!--    Launch AUTO MAPPING ros node-->
     <rosparam command="load" file="$(find auto_mapping_ros)/config/auto_mapping.yaml" />
     <node pkg="auto_mapping_ros" name="auto_mapping_ros_node" type="auto_mapping_ros_node" output="screen"/>
 </launch>

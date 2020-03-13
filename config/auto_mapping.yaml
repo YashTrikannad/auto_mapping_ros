@@ -22,7 +22,7 @@ base_frame: "base_link"
 map_frame: "map"
 
 # Global Planner Name
-planner_name: "FMTstar_search"
+planner_name: "fmt_star_server"
 
 # Velocity of the cars
 velocity: 0.2

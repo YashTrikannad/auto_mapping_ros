@@ -8,6 +8,9 @@
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <actionlib/client/simple_action_client.h>
+#include <actionlib/client/terminal_state.h>
+#include <fmt_star/planAction.h>
 
 #include "auto_mapping_ros/utils.h"
 #include "fmt_star/plan_srv.h"
@@ -16,6 +19,7 @@ namespace amr
 {
 
 using PlannerNode = std::array<double, 2>;
+typedef actionlib::SimpleActionClient<fmt_star::planAction>  Client;
 
 class GlobalPlanner
 {
@@ -26,11 +30,14 @@ public:
             current_tracking_node_index_(0),
             current_goal_index_(0),
             node_handle_(std::move(node_handle)),
+            client_("fmt_star_server", true),
             first_plan_(true)
     {
+        ROS_INFO("Global Planner is waiting for action server to start.");
+        client_.waitForServer();
+        ROS_INFO("Action server started");
         std::string planner_name;
         node_handle_->getParam("planner_name", planner_name);
-        client_ = node_handle_->serviceClient<fmt_star::plan_srv>(planner_name, true);
     };
 
     /// Constructor when sequence is already expressed in ros map-coordinates
@@ -43,11 +50,14 @@ public:
             current_goal_index_(0),
             sequence_(amr::translate_vector_of_indices_to_xy(sequence, resolution)),
             node_handle_(std::move(node_handle)),
+            client_("fmt_star_server", true),
             first_plan_(true)
     {
+        ROS_INFO("Global Planner is waiting for action server to start.");
+        client_.waitForServer();
+        ROS_INFO("Action server started");
         std::string planner_name;
         node_handle_->getParam("planner_name", planner_name);
-        client_ = node_handle_->serviceClient<fmt_star::plan_srv>(planner_name, true);
     };
 
     /// Constructor when sequence is not expressed in ros map-coordinates
@@ -59,11 +69,14 @@ public:
             current_goal_index_(0),
             sequence_(std::move(sequence)),
             node_handle_(std::move(node_handle)),
+            client_("fmt_star_server", true),
             first_plan_(true)
     {
+        ROS_INFO("Global Planner is waiting for action server to start.");
+        client_.waitForServer();
+        ROS_INFO("Action server started");
         std::string planner_name;
         node_handle_->getParam("planner_name", planner_name);
-        client_ = node_handle_->serviceClient<fmt_star::plan_srv>(planner_name, true);
     };
 
     /// Find Path between current position and the next position in the sequence
@@ -121,7 +134,6 @@ public:
             new_plan = get_next_plan(current_position_);
             if(current_tracking_node_index_ == sequence_.size()-1)
             {
-                client_.shutdown();
                 ROS_INFO("Global Planner Client is now shutting down as the sequence has been explored.");
             }
         }
@@ -135,10 +147,9 @@ private:
     geometry_msgs::PoseStamped end_;
     PlannerNode current_position_;
     std::vector<PlannerNode> sequence_;
-    fmt_star::plan_srv srv_message_;
 
     std::shared_ptr<ros::NodeHandle> node_handle_;
-    ros::ServiceClient client_;
+    Client client_;
 
     bool first_plan_;
     double distance_threshold_;
@@ -174,27 +185,36 @@ private:
     /// Finds and returns the plan between start and end by calling the planner service
     std::vector<PlannerNode> find_plan()
     {
-        srv_message_.request.start_position = start_;
-        srv_message_.request.end_position = end_;
-        srv_message_.request.update_samples = true;
-        srv_message_.request.update_map = false;
+        fmt_star::planGoal goal;
+        goal.start_position = start_;
+        goal.end_position = end_;
+        goal.update_map = false;
+        goal.update_samples = true;
+
+        client_.sendGoal(goal);
+        bool finished_before_timeout = client_.waitForResult(ros::Duration(5.0));
 
         std::vector<PlannerNode> current_plan{};
-        if(client_.call(srv_message_))
+        if (finished_before_timeout)
         {
-            ROS_INFO("Plan Recieved");
-            auto path = srv_message_.response.path.poses;
-            for(const auto& node: path)
+            actionlib::SimpleClientGoalState state = client_.getState();
+            ROS_INFO("Action finished: %s",state.toString().c_str());
+            if(state == actionlib::SimpleClientGoalState::SUCCEEDED)
             {
-                std::array<double, 2> global_path_node{};
-                global_path_node[0] = node.pose.position.x;
-                global_path_node[1] = node.pose.position.y;
-                current_plan.emplace_back(global_path_node);
+                ROS_INFO("Plan Recieved");
+                auto path = client_.getResult()->path.poses;
+                for(const auto& node: path)
+                {
+                    std::array<double, 2> global_path_node{};
+                    global_path_node[0] = node.pose.position.x;
+                    global_path_node[1] = node.pose.position.y;
+                    current_plan.emplace_back(global_path_node);
+                }
             }
         }
         else
         {
-            ROS_ERROR("No Plan Recieved");
+            ROS_INFO("No Plan Recieved. Action did not finish before the time out.");
         }
         return current_plan;
     }
