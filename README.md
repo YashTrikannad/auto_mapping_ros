@@ -47,11 +47,8 @@ In Terminal 1, launch the simulator:
 ```
 roslaunch f110_simulator simulator.launch
 ```
-In Terminal 2, launch the service:
-```
-roslaunch fmt_star fmt_star_service.launch 
-```
-In Terminal 3, run your global planner test:
+
+In Terminal 2, run your auto mapping module which will also start the fmt star action server:
 ```
 roslaunch auto_mapping_ros auto_mapping_ros.launch
 ```
