@@ -5,7 +5,7 @@ csv_filepath: "/csv/sequence"
 
 # Parameter for pure pursuit algorithm
 # A good estimate is 0-2r (According to the implementation explanation given in RI, CMU)
-lookahead_distance : 0.5
+lookahead_distance : 0.8
 
 # Map Resolution (meters/pixel)
 resolution : 0.05
@@ -25,4 +25,4 @@ map_frame: "map"
 planner_name: "fmt_star_server"
 
 # Velocity of the cars
-velocity: 0.2
+velocity: 0.5

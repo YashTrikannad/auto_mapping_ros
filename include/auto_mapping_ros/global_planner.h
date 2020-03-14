@@ -2,6 +2,7 @@
 #define AUTO_MAPPING_ROS_GLOBAL_PLANNER_H
 
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -11,6 +12,8 @@
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>
 #include <fmt_star/planAction.h>
+#include <thread>
+#include <timer_options.h>
 
 #include "auto_mapping_ros/utils.h"
 #include "fmt_star/plan_srv.h"
@@ -26,12 +29,18 @@ class GlobalPlanner
 public:
     /// Constructs GlobalPlanner (Does not initialize the sequence)
     /// @param node_handle
-    GlobalPlanner(std::shared_ptr<ros::NodeHandle> node_handle):
+    explicit GlobalPlanner(std::shared_ptr<ros::NodeHandle> node_handle):
             current_tracking_node_index_(0),
             current_goal_index_(0),
+            current_position_{-1, -1},
             node_handle_(std::move(node_handle)),
             client_("fmt_star_server", true),
-            first_plan_(true)
+            first_plan_(true),
+            new_plan_available_(false),
+            distance_threshold_(0),
+            callback_queue(nullptr),
+            ops_(ros::TimerOptions(ros::Duration(0.1), &GlobalPlanner::timer_callback, callback_queue)),
+            timer_(node_handle_->createTimer(ops_))
     {
         ROS_INFO("Global Planner is waiting for action server to start.");
         client_.waitForServer();
@@ -44,14 +53,20 @@ public:
     /// @param sequence
     /// @param node_handle
     /// @param resolution
-    GlobalPlanner(const std::vector<std::array<int, 2>>& sequence,
+    explicit GlobalPlanner(const std::vector<std::array<int, 2>>& sequence,
                   std::shared_ptr<ros::NodeHandle> node_handle, double resolution):
             current_tracking_node_index_(0),
             current_goal_index_(0),
+            current_position_{-1, -1},
             sequence_(amr::translate_vector_of_indices_to_xy(sequence, resolution)),
             node_handle_(std::move(node_handle)),
             client_("fmt_star_server", true),
-            first_plan_(true)
+            first_plan_(true),
+            new_plan_available_(false),
+            distance_threshold_(0),
+            callback_queue(nullptr),
+            ops_(ros::TimerOptions(ros::Duration(0.1), &GlobalPlanner::timer_callback, callback_queue)),
+            timer_(node_handle_->createTimer(ops_))
     {
         ROS_INFO("Global Planner is waiting for action server to start.");
         client_.waitForServer();
@@ -63,14 +78,20 @@ public:
     /// Constructor when sequence is not expressed in ros map-coordinates
     /// @param sequence
     /// @param node_handle
-    GlobalPlanner(std::vector<std::array<double, 2>>  sequence,
+    explicit GlobalPlanner(std::vector<std::array<double, 2>>  sequence,
                   std::shared_ptr<ros::NodeHandle> node_handle):
             current_tracking_node_index_(0),
             current_goal_index_(0),
+            current_position_{-1, -1},
             sequence_(std::move(sequence)),
             node_handle_(std::move(node_handle)),
             client_("fmt_star_server", true),
-            first_plan_(true)
+            first_plan_(true),
+            new_plan_available_(false),
+            distance_threshold_(0),
+            callback_queue(nullptr),
+            ops_(ros::TimerOptions(ros::Duration(0.1), &GlobalPlanner::timer_callback, callback_queue)),
+            timer_(node_handle_->createTimer(ops_))
     {
         ROS_INFO("Global Planner is waiting for action server to start.");
         client_.waitForServer();
@@ -78,20 +99,6 @@ public:
         std::string planner_name;
         node_handle_->getParam("planner_name", planner_name);
     };
-
-    /// Find Path between current position and the next position in the sequence
-    /// @param current_position - current position (x, y) in the map
-    /// @return
-    std::vector<PlannerNode> get_next_plan(const PlannerNode &current_position)
-    {
-        if(sequence_.empty())
-        {
-            ROS_ERROR("The coverage sequence is empty. It needs to be set before calling get_next_plan.");
-        }
-        update_start(current_position);
-        update_end();
-        return find_plan();
-    }
 
     /// Initializes the Global Planner with the sequence (coordinates of sequence already same as in ROS Map)
     /// @param sequence
@@ -116,9 +123,61 @@ public:
         return sequence_;
     }
 
-    std::vector<PlannerNode> update_current_position(const PlannerNode &current_position)
+    void update_current_position(const PlannerNode &current_position)
     {
         current_position_ = current_position;
+    }
+
+    std::optional<std::vector<PlannerNode>> get_new_plan()
+    {
+        std::vector<PlannerNode> plan{};
+        if(new_plan_available_)
+        {
+            ROS_INFO("New Plan Available!");
+            new_plan_available_ = false;
+            plan = new_plan_;
+            new_plan_.clear();
+            return plan;
+        }
+        return std::nullopt;
+    }
+
+private:
+    size_t current_tracking_node_index_;
+    size_t current_goal_index_;
+    geometry_msgs::PoseStamped start_;
+    geometry_msgs::PoseStamped end_;
+    PlannerNode current_position_;
+    std::vector<PlannerNode> sequence_;
+    std::vector<PlannerNode> new_plan_;
+
+    std::shared_ptr<ros::NodeHandle> node_handle_;
+    Client client_;
+
+    bool first_plan_;
+    bool new_plan_available_;
+    double distance_threshold_;
+
+    ros::CallbackQueueInterface* callback_queue;
+    ros::TimerOptions ops_;
+    ros::Timer timer_;
+
+    /// Find Path between current position and the next position in the sequence
+    /// @param current_position - current position (x, y) in the map
+    /// @return
+    std::vector<PlannerNode> get_next_plan(const PlannerNode &current_position)
+    {
+        if(sequence_.empty())
+        {
+            ROS_ERROR("The coverage sequence is empty. It needs to be set before calling get_next_plan.");
+        }
+        update_start(current_position);
+        update_end();
+        return find_plan();
+    }
+
+    void timer_callback(const ros::TimerEvent&)
+    {
         std::vector<PlannerNode> new_plan{};
         if(distance(current_position_, sequence_[current_tracking_node_index_]) < distance_threshold_ || first_plan_)
         {
@@ -131,28 +190,17 @@ public:
             {
                 current_tracking_node_index_++;
             }
-            new_plan = get_next_plan(current_position_);
+            new_plan_.clear();
+//            std::thread next_plan_thread(&GlobalPlanner::get_next_plan, this, current_position_);
+            new_plan_ = get_next_plan(current_position_);
+            new_plan_available_ = true;
             if(current_tracking_node_index_ == sequence_.size()-1)
             {
+                //TODO: Give Brake Signal
                 ROS_INFO("Global Planner Client is now shutting down as the sequence has been explored.");
             }
         }
-        return new_plan;
     }
-
-private:
-    size_t current_tracking_node_index_;
-    size_t current_goal_index_;
-    geometry_msgs::PoseStamped start_;
-    geometry_msgs::PoseStamped end_;
-    PlannerNode current_position_;
-    std::vector<PlannerNode> sequence_;
-
-    std::shared_ptr<ros::NodeHandle> node_handle_;
-    Client client_;
-
-    bool first_plan_;
-    double distance_threshold_;
 
     /// Update the start position as the current position
     /// @param current_position

@@ -66,10 +66,12 @@ public:
     {
         last_updated_pose_[0] = pose_msg->pose.position.x;
         last_updated_pose_[1] = pose_msg->pose.position.y;
-        const auto new_plan = global_planner_.update_current_position(last_updated_pose_);
-        if(!new_plan.empty())
+        global_planner_.update_current_position(last_updated_pose_);
+        const auto new_plan = global_planner_.get_new_plan();
+        if(new_plan)
         {
-            current_plan_ = new_plan;
+            ROS_INFO("Updated Global Plan for Car %i", local_planner_id_);
+            current_plan_ = new_plan.value();
         }
         run_pure_pursuit(current_plan_, last_updated_pose_);
     }

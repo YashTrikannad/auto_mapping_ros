@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.1.0)
 project(auto_mapping_ros)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++14)
+add_compile_options(-std=c++17)
 #set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
 
 ## Find catkin macros and libraries
