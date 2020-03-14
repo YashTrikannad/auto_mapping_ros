@@ -7,13 +7,13 @@
 #include <vector>
 
 #include <ros/ros.h>
+#include <ros/node_handle.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>
 #include <fmt_star/planAction.h>
 #include <thread>
-#include <timer_options.h>
 
 #include "auto_mapping_ros/utils.h"
 #include "fmt_star/plan_srv.h"
@@ -38,9 +38,7 @@ public:
             first_plan_(true),
             new_plan_available_(false),
             distance_threshold_(0),
-            callback_queue(nullptr),
-            ops_(ros::TimerOptions(ros::Duration(0.1), &GlobalPlanner::timer_callback, callback_queue)),
-            timer_(node_handle_->createTimer(ops_))
+            timer_(node_handle_->createTimer(ros::Duration(0.1), &GlobalPlanner::timer_callback, this))
     {
         ROS_INFO("Global Planner is waiting for action server to start.");
         client_.waitForServer();
@@ -64,9 +62,7 @@ public:
             first_plan_(true),
             new_plan_available_(false),
             distance_threshold_(0),
-            callback_queue(nullptr),
-            ops_(ros::TimerOptions(ros::Duration(0.1), &GlobalPlanner::timer_callback, callback_queue)),
-            timer_(node_handle_->createTimer(ops_))
+            timer_(node_handle_->createTimer(ros::Duration(0.1), &GlobalPlanner::timer_callback, this))
     {
         ROS_INFO("Global Planner is waiting for action server to start.");
         client_.waitForServer();
@@ -89,9 +85,7 @@ public:
             first_plan_(true),
             new_plan_available_(false),
             distance_threshold_(0),
-            callback_queue(nullptr),
-            ops_(ros::TimerOptions(ros::Duration(0.1), &GlobalPlanner::timer_callback, callback_queue)),
-            timer_(node_handle_->createTimer(ops_))
+            timer_(node_handle_->createTimer(ros::Duration(0.1), &GlobalPlanner::timer_callback, this))
     {
         ROS_INFO("Global Planner is waiting for action server to start.");
         client_.waitForServer();
@@ -158,8 +152,6 @@ private:
     bool new_plan_available_;
     double distance_threshold_;
 
-    ros::CallbackQueueInterface* callback_queue;
-    ros::TimerOptions ops_;
     ros::Timer timer_;
 
     /// Find Path between current position and the next position in the sequence
@@ -178,9 +170,11 @@ private:
 
     void timer_callback(const ros::TimerEvent&)
     {
+        ROS_INFO("TIMER CALLED");
         std::vector<PlannerNode> new_plan{};
         if(distance(current_position_, sequence_[current_tracking_node_index_]) < distance_threshold_ || first_plan_)
         {
+            ROS_INFO("PLANNING");
             ROS_DEBUG("Getting New Plan.");
             if(first_plan_)
             {
@@ -191,7 +185,6 @@ private:
                 current_tracking_node_index_++;
             }
             new_plan_.clear();
-//            std::thread next_plan_thread(&GlobalPlanner::get_next_plan, this, current_position_);
             new_plan_ = get_next_plan(current_position_);
             new_plan_available_ = true;
             if(current_tracking_node_index_ == sequence_.size()-1)
