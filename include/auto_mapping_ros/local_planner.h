@@ -57,6 +57,9 @@ public:
         const auto csv_filepath = ros::package::getPath(package_name) + csv_relative_filepath;
         amr::read_sequence_from_csv(&coverage_sequence_non_ros_map, csv_filepath);
         coverage_sequence_ = global_planner_.translate_and_init(coverage_sequence_non_ros_map, resolution_, distance_threshold_);
+
+        std::thread global_planning_thread(&GlobalPlanner::start_global_planner, &global_planner_);
+        global_planning_thread.detach();
         ROS_INFO("auto_mapping_ros node is now running!");
     }
 

@@ -14,6 +14,7 @@
 #include <actionlib/client/terminal_state.h>
 #include <fmt_star/planAction.h>
 #include <thread>
+#include <mutex>
 
 #include "auto_mapping_ros/utils.h"
 #include "fmt_star/plan_srv.h"
@@ -37,8 +38,7 @@ public:
             client_("fmt_star_server", true),
             first_plan_(true),
             new_plan_available_(false),
-            distance_threshold_(0),
-            timer_(node_handle_->createTimer(ros::Duration(0.1), &GlobalPlanner::timer_callback, this))
+            distance_threshold_(0)
     {
         ROS_INFO("Global Planner is waiting for action server to start.");
         client_.waitForServer();
@@ -61,8 +61,7 @@ public:
             client_("fmt_star_server", true),
             first_plan_(true),
             new_plan_available_(false),
-            distance_threshold_(0),
-            timer_(node_handle_->createTimer(ros::Duration(0.1), &GlobalPlanner::timer_callback, this))
+            distance_threshold_(0)
     {
         ROS_INFO("Global Planner is waiting for action server to start.");
         client_.waitForServer();
@@ -84,8 +83,7 @@ public:
             client_("fmt_star_server", true),
             first_plan_(true),
             new_plan_available_(false),
-            distance_threshold_(0),
-            timer_(node_handle_->createTimer(ros::Duration(0.1), &GlobalPlanner::timer_callback, this))
+            distance_threshold_(0)
     {
         ROS_INFO("Global Planner is waiting for action server to start.");
         client_.waitForServer();
@@ -119,11 +117,13 @@ public:
 
     void update_current_position(const PlannerNode &current_position)
     {
+        std::lock_guard<std::mutex> lock(current_position_mutex_);
         current_position_ = current_position;
     }
 
     std::optional<std::vector<PlannerNode>> get_new_plan()
     {
+        std::lock_guard<std::mutex> lock(new_plan_mutex_);
         std::vector<PlannerNode> plan{};
         if(new_plan_available_)
         {
@@ -134,6 +134,54 @@ public:
             return plan;
         }
         return std::nullopt;
+    }
+
+    void start_global_planner()
+    {
+        {
+            auto updated_position = PlannerNode{-1, -1};
+            while(updated_position == PlannerNode{-1, -1})
+            {
+                ROS_INFO("Global Planner waiting for pose update ...");
+                sleep(1.0);
+                current_position_mutex_.lock();
+                updated_position = current_position_;
+                current_position_mutex_.unlock();
+            }
+        }
+        while(ros::ok())
+        {
+            PlannerNode updated_position;
+            {
+                std::lock_guard<std::mutex> lock(current_position_mutex_);
+                updated_position = current_position_;
+            }
+            const auto current_distance = distance(updated_position, sequence_[current_tracking_node_index_]);
+            if(current_distance < distance_threshold_ || first_plan_)
+            {
+                ROS_DEBUG("Getting New Plan.");
+                if(first_plan_)
+                {
+                    first_plan_ = false;
+                }
+                else
+                {
+                    current_tracking_node_index_++;
+                }
+                const auto new_plan = get_next_plan(updated_position);
+                {
+                    std::lock_guard<std::mutex> copy_lock(new_plan_mutex_);
+                    new_plan_.clear();
+                    new_plan_ = new_plan;
+                    new_plan_available_ = true;
+                }
+                if(current_tracking_node_index_ == sequence_.size()-1)
+                {
+                    //TODO: Give Brake Signal
+                    ROS_INFO("Global Planner Client is now shutting down as the sequence has been explored.");
+                }
+            }
+        }
     }
 
 private:
@@ -152,7 +200,8 @@ private:
     bool new_plan_available_;
     double distance_threshold_;
 
-    ros::Timer timer_;
+    std::mutex current_position_mutex_;
+    std::mutex new_plan_mutex_;
 
     /// Find Path between current position and the next position in the sequence
     /// @param current_position - current position (x, y) in the map
@@ -166,33 +215,6 @@ private:
         update_start(current_position);
         update_end();
         return find_plan();
-    }
-
-    void timer_callback(const ros::TimerEvent&)
-    {
-        ROS_INFO("TIMER CALLED");
-        std::vector<PlannerNode> new_plan{};
-        if(distance(current_position_, sequence_[current_tracking_node_index_]) < distance_threshold_ || first_plan_)
-        {
-            ROS_INFO("PLANNING");
-            ROS_DEBUG("Getting New Plan.");
-            if(first_plan_)
-            {
-                first_plan_ = false;
-            }
-            else
-            {
-                current_tracking_node_index_++;
-            }
-            new_plan_.clear();
-            new_plan_ = get_next_plan(current_position_);
-            new_plan_available_ = true;
-            if(current_tracking_node_index_ == sequence_.size()-1)
-            {
-                //TODO: Give Brake Signal
-                ROS_INFO("Global Planner Client is now shutting down as the sequence has been explored.");
-            }
-        }
     }
 
     /// Update the start position as the current position
@@ -242,7 +264,6 @@ private:
             ROS_INFO("Action finished: %s",state.toString().c_str());
             if(state == actionlib::SimpleClientGoalState::SUCCEEDED)
             {
-                ROS_INFO("Plan Recieved");
                 auto path = client_.getResult()->path.poses;
                 for(const auto& node: path)
                 {
