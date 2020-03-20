@@ -11,6 +11,7 @@ struct Node
     int y;
     std::vector<Node *> neighbors;
     std::vector<double> neighbors_cost;
+    std::vector<bool> visited_neighbor;
     double mst_key;
     std::vector<Node *> mst_child;
 

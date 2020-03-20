@@ -407,6 +407,7 @@ private:
 
             node.neighbors = neighbor_nodes;
             node.neighbors_cost = neighbor_nodes_cost;
+
         }
 
         trim_edges();
@@ -421,6 +422,12 @@ private:
                 neighbor_nodes_cost.emplace_back(distance);
             }
             node.neighbors_cost = neighbor_nodes_cost;
+
+            for (auto i = 0; i < node.neighbors.size(); i++)
+            {
+                node.visited_neighbor.emplace_back(false);
+            }
+
         }
     }
 };
