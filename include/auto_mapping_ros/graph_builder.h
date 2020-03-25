@@ -15,6 +15,7 @@
 #include <set>
 #include <utility>
 
+#include "auto_mapping_ros/landmarks.h"
 #include "auto_mapping_ros/types.h"
 #include "auto_mapping_ros/utils.h"
 

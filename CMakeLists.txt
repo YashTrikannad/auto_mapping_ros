@@ -150,6 +150,7 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 add_executable(${PROJECT_NAME}_node node/auto_mapping_ros_node.cpp)
 add_executable(skeletonizer_test testing/skeletonizer_test.cpp)
 add_executable(graph_builder_test testing/graph_builder_test.cpp)
+add_executable(frontier_finding_test testing/frontier_finding_test.cpp)
 add_executable(graph_builder_blueprint_test testing/graph_builder_blueprint_test.cpp)
 #add_executable(coverage_planner_test testing/coverage_planner_test.cpp)
 add_executable(coverage_planner_blueprint_test testing/coverage_planner_blueprint_test.cpp)
@@ -176,6 +177,12 @@ target_link_libraries(${PROJECT_NAME}_node
     )
 
 target_link_libraries(graph_builder_test
+        ${catkin_LIBRARIES}
+        ${OpenCV_LIBS}
+        -lconfig++
+        )
+
+target_link_libraries(frontier_finding_test
         ${catkin_LIBRARIES}
         ${OpenCV_LIBS}
         -lconfig++
