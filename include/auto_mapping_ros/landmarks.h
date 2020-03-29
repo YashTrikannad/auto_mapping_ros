@@ -12,8 +12,13 @@ struct Frontier
     std::vector<std::array<int, 2>> frontier;
     std::array<int, 2> frontier_mean;
 
-    /// Update the mean x,y of the frontier
+    const int min_frontier_cells = 20;
+
+    /// Update the mean (x,y) of the frontier
     void update_frontier_mean();
+
+    /// Removes minor frontiers which have frontier cells lesser than 'min_frontier_cells'
+    void remove_minor_frontiers();
 };
 
 struct RayCastingConfig
@@ -31,7 +36,7 @@ struct FrontierConfig
     int min_free_threshold = 230;
     int occupied_value = 0;
     int free_value = 255;
-    int unknown_value = 100;
+    int unknown_value = 216;
 };
 
 class FrontierFinder
@@ -67,6 +72,8 @@ public:
     /// @param map
     /// @return
     cv::Mat ray_cast_to_2d_sub_map(const std::array<int, 2>& point, const cv::Mat& map) const;
+
+    std::vector<Frontier> remove_minor_frontiers(const std::vector<Frontier>& frontiers) const;
 
 private:
     RayCastingConfig ray_casting_config;

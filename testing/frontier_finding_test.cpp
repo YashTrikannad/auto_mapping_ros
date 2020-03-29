@@ -49,7 +49,16 @@ int main()
         for (const auto &node: graph)
         {
             const auto ray_casted_map = finder.ray_cast_to_2d_sub_map(node.get_location(), map);
-//            finder.find_frontiers(node.get_location(), map);
+            const auto frontiers = finder.find_frontiers(node.get_location(), map);
+            const auto trimmed_frontiers = finder.remove_minor_frontiers(frontiers);
+
+            std::cout << "No of Frontiers: " << trimmed_frontiers.size() << std::endl;
+            std::cout << "Frontier Means: " << std::endl;
+            for(const auto& frontier: trimmed_frontiers)
+            {
+                std::cout << "x: " << frontier.frontier_mean[0] << " y: " << frontier.frontier_mean[1] << std::endl;
+            }
+
             namedWindow("Ray Casted Map", cv::WINDOW_AUTOSIZE);
             cv::imshow("Ray Casted Map", ray_casted_map);
             cv::waitKey(0);
@@ -57,24 +66,37 @@ int main()
     }
     else
     {
-        cv::Mat test_matrix  = cv::Mat(10, 15, CV_8U, cv::Scalar(216));
-        for(int i = 0; i<test_matrix.cols; i++)
+        cv::Mat test_matrix  = cv::Mat(10, 10, CV_8U, cv::Scalar(255));
+        for(int i = 0; i<test_matrix.rows; i++)
         {
-            test_matrix.at<uchar>(i, 2) = 0;
-            test_matrix.at<uchar>(i, 7) = 0;
-            test_matrix.at<uchar>(i, 0) = 216;
-            test_matrix.at<uchar>(i, 1) = 216;
-            test_matrix.at<uchar>(i, 8) = 216;
-            test_matrix.at<uchar>(i, 9) = 216;
             test_matrix.at<uchar>(2, i) = 0;
             test_matrix.at<uchar>(7, i) = 0;
+            test_matrix.at<uchar>(i, 0) = 216;
+            test_matrix.at<uchar>(i, 1) = 216;
+            test_matrix.at<uchar>(0, i) = 216;
+            test_matrix.at<uchar>(1, i) = 216;
+            test_matrix.at<uchar>(i, 8) = 216;
+            test_matrix.at<uchar>(i, 9) = 216;
+            test_matrix.at<uchar>(8, i) = 216;
+            test_matrix.at<uchar>(9, i) = 216;
         }
         print_cv_matrix(test_matrix);
 
         amr::FrontierFinder finder;
-        const auto ray_casted_map = finder.ray_cast_to_2d_map({5, 5}, test_matrix);
-        std::cout << std::endl;
-        print_cv_matrix(ray_casted_map);
+
+//        const auto ray_casted_map = finder.ray_cast_to_2d_map({5, 5}, test_matrix);
+//        print_cv_matrix(ray_casted_map);
+
+        std::cout << "Finding Frontier " << std::endl;
+        const auto frontiers = finder.find_frontiers({5, 5}, test_matrix);
+
+        std::cout << "No of Frontiers: " << frontiers.size() << std::endl;
+        std::cout << "Frontier Means: " << std::endl;
+        for(const auto& frontier: frontiers)
+        {
+            std::cout << "x: " << frontier.frontier_mean[0] << " y: " << frontier.frontier_mean[1] << std::endl;
+        }
+//        print_cv_matrix(ray_casted_map);
     }
 
     return 0;

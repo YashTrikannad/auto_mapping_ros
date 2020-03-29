@@ -32,6 +32,8 @@ void Frontier::update_frontier_mean()
         frontier_mean[0] += frontier_cell[0];
         frontier_mean[1] += frontier_cell[1];
     }
+    frontier_mean[0] = frontier_mean[0]/frontier.size();
+    frontier_mean[1] = frontier_mean[1]/frontier.size();
 }
 
 /// Finds frontiers around the point
@@ -54,7 +56,7 @@ std::vector<Frontier> FrontierFinder::find_frontiers(const std::array<int, 2>& p
     {
         for(int j=0; j<frontier_map.cols; j++)
         {
-            if(frontier_map.at<bool>(i, j))
+            if(frontier_map.at<bool>(i, j) && !static_cast<bool>(visited.at<uchar>(i, j)))
             {
                 Frontier frontier{};
                 run_dfs_and_update_frontier_groups(i, j, frontier_map, &visited, &frontier.frontier);
@@ -86,22 +88,22 @@ void FrontierFinder::run_dfs_and_update_frontier_groups(int row_index, int col_i
         cv::Mat* visited,
         std::vector<std::array<int, 2>>* frontier_group) const
 {
+    if(static_cast<bool>(visited->at<uchar>(row_index, col_index))) return;
+    frontier_group->push_back({row_index, col_index});
+    visited->at<uchar>(row_index, col_index) = true;
+
     for(int i=0; i<neighbor_indices.size(); i++)
     {
         const auto neighbor_point_x = row_index + neighbor_indices[i][0];
         const auto neighbor_point_y = col_index + neighbor_indices[i][1];
-        if(is_valid_cell(neighbor_point_x, neighbor_point_y, frontier_map.rows, frontier_map.cols))
-        {
-            if(visited->at<float>(neighbor_point_x, neighbor_point_y)) return;
-            visited->at<float>(neighbor_point_x, neighbor_point_y) = true;
 
-            if(!frontier_map.at<bool>(neighbor_point_x, neighbor_point_y)) return;
+        if(!is_valid_cell(neighbor_point_x, neighbor_point_y, frontier_map.rows, frontier_map.cols) ||
+        !frontier_map.at<bool>(neighbor_point_x, neighbor_point_y)) continue;
 
-            frontier_group->push_back({neighbor_point_x, neighbor_point_y});
-            run_dfs_and_update_frontier_groups(neighbor_point_x, neighbor_point_y, frontier_map,
-                                               visited, frontier_group);
-        }
+        run_dfs_and_update_frontier_groups(neighbor_point_x, neighbor_point_y, frontier_map,
+                                           visited, frontier_group);
     }
+    return;
 }
 
 /// Get a CV Matrix of all cells which are frontiers marked as 1 otherwise 06
@@ -114,12 +116,14 @@ cv::Mat FrontierFinder::get_frontier_cell_mat(const cv::Mat& map) const
     {
         for(int j=0; j<map.cols; j++)
         {
-            if(map.at<float>(i, j) == frontier_config.free_value && is_frontier_cell(i, j, map))
+            if(static_cast<int>(map.at<uchar>(i, j)) == frontier_config.free_value &&
+            is_frontier_cell(i, j, map))
             {
                 frontier_map.at<bool>(i, j) = true;
             }
         }
     }
+    return frontier_map;
 }
 
 /// Determines if the current FREE cell at map(i, j) is a frontier cell
@@ -135,7 +139,7 @@ bool FrontierFinder::is_frontier_cell(int row_index, int col_index, const cv::Ma
         int neighbor_col_index = col_index+neighbor_indices[i][1];
         if(is_valid_cell(row_index+neighbor_indices[i][0], col_index+neighbor_indices[i][1], map.rows, map.cols))
         {
-            if(map.at<float>(neighbor_row_index, neighbor_col_index) == frontier_config.unknown_value)
+            if(static_cast<int>(map.at<uchar>(neighbor_row_index, neighbor_col_index)) == frontier_config.unknown_value)
             {
                 return true;
             }
@@ -156,6 +160,19 @@ bool FrontierFinder::is_valid_cell(int row_index, int col_index, int map_rows, i
         return false;
     }
     return true;
+}
+
+std::vector<Frontier> FrontierFinder::remove_minor_frontiers(const std::vector<Frontier>& frontiers) const
+{
+    std::vector<Frontier> new_frontiers;
+    for(const auto& frontier: frontiers)
+    {
+        if(frontier.frontier.size() >= frontier.min_frontier_cells)
+        {
+            new_frontiers.emplace_back(frontier);
+        }
+    }
+    return new_frontiers;
 }
 
 /// Construct a 2D map around the point
