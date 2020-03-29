@@ -7,6 +7,15 @@
 namespace amr
 {
 
+struct Frontier
+{
+    std::vector<std::array<int, 2>> frontier;
+    std::array<int, 2> frontier_mean;
+
+    /// Update the mean x,y of the frontier
+    void update_frontier_mean();
+};
+
 struct RayCastingConfig
 {
     double fov = 6.28;
@@ -19,7 +28,7 @@ struct RayCastingConfig
 struct FrontierConfig
 {
     int max_occupied_threshold = 120;
-    int min_free_threshold = 200;
+    int min_free_threshold = 230;
     int occupied_value = 0;
     int free_value = 255;
     int unknown_value = 100;
@@ -35,7 +44,7 @@ public:
     /// @param map - CV image of the map
     /// @param config
     /// @return vector of the centers of frontiers
-    std::vector<std::array<double, 2>> find_frontiers(const std::array<int, 2>& point, const cv::Mat& map) const;
+    std::vector<Frontier> find_frontiers(const std::array<int, 2>& point, const cv::Mat& map) const;
 
     /// Finds the number of frontiers around the point
     /// @param point - (x, y) around where you want to find frontiers
@@ -44,7 +53,7 @@ public:
     /// @return number of frontiers
     int find_n_frontiers(const std::array<int, 2>& point, const cv::Mat& map) const;
 
-    /// Construct a 2D map around the point
+    /// Construct a 2D map around the point and returns an image of the size of map
     /// @param point
     /// @param map
     /// @param config
@@ -52,9 +61,27 @@ public:
     cv::Mat ray_cast_to_2d_map(const std::array<int, 2>& point,
                                const cv::Mat& map) const;
 
+    /// Construct a 2D map around the point and returns an image of the size constant value more than maximum
+    /// range of raycasting
+    /// @param point
+    /// @param map
+    /// @return
+    cv::Mat ray_cast_to_2d_sub_map(const std::array<int, 2>& point, const cv::Mat& map) const;
+
 private:
     RayCastingConfig ray_casting_config;
     FrontierConfig frontier_config;
+
+    /// Runs DFS on the point (i, j) which is a frontier cell and update the frontier group vector with all
+    /// the points belonging to the frontier group connected to the point
+    /// @param row_index
+    /// @param col_index
+    /// @param frontier_map
+    /// @param frontier_group
+    void run_dfs_and_update_frontier_groups(int row_index, int col_index,
+                                            const cv::Mat& frontier_map,
+                                            cv::Mat* visited,
+                                            std::vector<std::array<int, 2>>* frontier_group) const;
 
     /// Get a CV Matrix of all cells which are frontiers marked as 1 otherwise 06
     /// @param map
