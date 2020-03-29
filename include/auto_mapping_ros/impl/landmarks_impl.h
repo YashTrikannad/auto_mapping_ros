@@ -83,6 +83,12 @@ int FrontierFinder::find_n_frontiers(const std::array<int, 2>& point, const cv::
     return find_frontiers(point, map).size();
 }
 
+/// Runs DFS on the point (i, j) which is a frontier cell and update the frontier group vector with all
+/// the points belonging to the frontier group connected to the point
+/// @param row_index
+/// @param col_index
+/// @param frontier_map
+/// @param frontier_group
 void FrontierFinder::run_dfs_and_update_frontier_groups(int row_index, int col_index,
         const cv::Mat& frontier_map,
         cv::Mat* visited,
@@ -98,12 +104,28 @@ void FrontierFinder::run_dfs_and_update_frontier_groups(int row_index, int col_i
         const auto neighbor_point_y = col_index + neighbor_indices[i][1];
 
         if(!is_valid_cell(neighbor_point_x, neighbor_point_y, frontier_map.rows, frontier_map.cols) ||
-        !frontier_map.at<bool>(neighbor_point_x, neighbor_point_y)) continue;
+           !frontier_map.at<bool>(neighbor_point_x, neighbor_point_y)) continue;
 
         run_dfs_and_update_frontier_groups(neighbor_point_x, neighbor_point_y, frontier_map,
                                            visited, frontier_group);
     }
     return;
+}
+
+/// Dilate frontier cells in the map
+/// @param map
+/// @return
+cv::Mat FrontierFinder::dilate_frontier_cell_mat(const cv::Mat& map) const
+{
+    cv::Mat dilated_img;
+    const int dilation_size = frontier_config.dilation_size;
+    const int dilation_type = cv::MORPH_RECT;
+    cv::Mat element = getStructuringElement( dilation_type,
+                                             cv::Size( 2*dilation_size + 1, 2*dilation_size+1 ),
+                                             cv::Point( dilation_size, dilation_size));
+
+    cv::dilate(map, dilated_img, element);
+    return dilated_img;
 }
 
 /// Get a CV Matrix of all cells which are frontiers marked as 1 otherwise 06
@@ -123,7 +145,9 @@ cv::Mat FrontierFinder::get_frontier_cell_mat(const cv::Mat& map) const
             }
         }
     }
-    return frontier_map;
+    const auto dilated_frontier_map = dilate_frontier_cell_mat(frontier_map);
+
+    return dilated_frontier_map;
 }
 
 /// Determines if the current FREE cell at map(i, j) is a frontier cell
@@ -201,7 +225,7 @@ cv::Mat FrontierFinder::ray_cast_to_2d_map(const std::array<int, 2>& point,
 /// @return
 cv::Mat FrontierFinder::ray_cast_to_2d_sub_map(const std::array<int, 2>& point, const cv::Mat& map) const
 {
-    const auto map_size = static_cast<int>(ray_casting_config.max_valid_range/ray_casting_config.grid_size)+2;
+    const auto map_size = static_cast<int>(ray_casting_config.max_valid_range/ray_casting_config.grid_size)+50;
 
     const auto full_size_map = ray_cast_to_2d_map(point, map);
 

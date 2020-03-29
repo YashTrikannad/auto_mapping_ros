@@ -48,7 +48,7 @@ int main()
 
         for (const auto &node: graph)
         {
-            const auto ray_casted_map = finder.ray_cast_to_2d_sub_map(node.get_location(), map);
+            auto ray_casted_map = finder.ray_cast_to_2d_map(node.get_location(), map);
             const auto frontiers = finder.find_frontiers(node.get_location(), map);
             const auto trimmed_frontiers = finder.remove_minor_frontiers(frontiers);
 
@@ -57,6 +57,14 @@ int main()
             for(const auto& frontier: trimmed_frontiers)
             {
                 std::cout << "x: " << frontier.frontier_mean[0] << " y: " << frontier.frontier_mean[1] << std::endl;
+            }
+
+            for(const auto& frontier: trimmed_frontiers)
+            {
+                for(const auto& frontier_cell: frontier.frontier)
+                {
+                    ray_casted_map.at<uchar>(frontier_cell[0], frontier_cell[1]) = 100;
+                }
             }
 
             namedWindow("Ray Casted Map", cv::WINDOW_AUTOSIZE);
@@ -84,8 +92,8 @@ int main()
 
         amr::FrontierFinder finder;
 
-//        const auto ray_casted_map = finder.ray_cast_to_2d_map({5, 5}, test_matrix);
-//        print_cv_matrix(ray_casted_map);
+        const auto ray_casted_map = finder.ray_cast_to_2d_map({5, 5}, test_matrix);
+        print_cv_matrix(ray_casted_map);
 
         std::cout << "Finding Frontier " << std::endl;
         const auto frontiers = finder.find_frontiers({5, 5}, test_matrix);
@@ -96,7 +104,6 @@ int main()
         {
             std::cout << "x: " << frontier.frontier_mean[0] << " y: " << frontier.frontier_mean[1] << std::endl;
         }
-//        print_cv_matrix(ray_casted_map);
     }
 
     return 0;

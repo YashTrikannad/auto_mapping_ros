@@ -12,7 +12,7 @@ struct Frontier
     std::vector<std::array<int, 2>> frontier;
     std::array<int, 2> frontier_mean;
 
-    const int min_frontier_cells = 20;
+    const int min_frontier_cells = 200;
 
     /// Update the mean (x,y) of the frontier
     void update_frontier_mean();
@@ -25,7 +25,7 @@ struct RayCastingConfig
 {
     double fov = 6.28;
     int n_rays = 1080;
-    double max_valid_range = 5;
+    double max_valid_range = 3;
     double grid_size = 0.05;
     double step_size = grid_size*0.9;
 };
@@ -37,6 +37,7 @@ struct FrontierConfig
     int occupied_value = 0;
     int free_value = 255;
     int unknown_value = 216;
+    int dilation_size = 2;
 };
 
 class FrontierFinder
@@ -89,6 +90,13 @@ private:
                                             const cv::Mat& frontier_map,
                                             cv::Mat* visited,
                                             std::vector<std::array<int, 2>>* frontier_group) const;
+
+    bool is_neighbor_frontier(int row_index, int col_index, const cv::Mat& map) const;
+
+    /// Dilate frontier cells in the map
+    /// @param map
+    /// @return
+    cv::Mat dilate_frontier_cell_mat(const cv::Mat& map) const;
 
     /// Get a CV Matrix of all cells which are frontiers marked as 1 otherwise 06
     /// @param map
