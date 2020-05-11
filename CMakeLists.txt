@@ -134,6 +134,8 @@ include_directories(
 include_directories(${EIGEN3_INCLUDE_DIR})
 include_directories(${OpenCV_INCLUDE_DIRS})
 
+add_subdirectory(aoc_tsp)
+
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/auto_mapping_ros.cpp
@@ -154,6 +156,7 @@ add_executable(frontier_finding_test testing/frontier_finding_test.cpp)
 add_executable(graph_builder_blueprint_test testing/graph_builder_blueprint_test.cpp)
 #add_executable(coverage_planner_test testing/coverage_planner_test.cpp)
 add_executable(coverage_planner_blueprint_test testing/coverage_planner_blueprint_test.cpp)
+add_executable(coverage_planner_aco_test testing/coverage_planner_aco_test.cpp)
 add_executable(coverage_sequence_creator src/coverage_sequence_csv_creator.cpp)
 #add_executable(global_planner_test testing/global_planner_test.cpp)
 
@@ -174,42 +177,56 @@ target_link_libraries(${PROJECT_NAME}_node
     ${catkin_LIBRARIES}
     ${OpenCV_LIBS}
     -lconfig++
+    acolib
     )
 
 target_link_libraries(graph_builder_test
         ${catkin_LIBRARIES}
         ${OpenCV_LIBS}
         -lconfig++
+        acolib
         )
 
 target_link_libraries(frontier_finding_test
         ${catkin_LIBRARIES}
         ${OpenCV_LIBS}
         -lconfig++
+        acolib
         )
 
 target_link_libraries(skeletonizer_test
         ${catkin_LIBRARIES}
         ${OpenCV_LIBS}
         -lconfig++
+        acolib
         )
 
 target_link_libraries(graph_builder_blueprint_test
         ${catkin_LIBRARIES}
         ${OpenCV_LIBS}
         -lconfig++
+        acolib
         )
 
 target_link_libraries(coverage_planner_blueprint_test
         ${catkin_LIBRARIES}
         ${OpenCV_LIBS}
         -lconfig++
+        acolib
+        )
+
+target_link_libraries(coverage_planner_aco_test
+        ${catkin_LIBRARIES}
+        ${OpenCV_LIBS}
+        -lconfig++
+        acolib
         )
 
 target_link_libraries(coverage_sequence_creator
         ${catkin_LIBRARIES}
         ${OpenCV_LIBS}
         -lconfig++
+        acolib
         )
 
 #target_link_libraries(global_planner_test

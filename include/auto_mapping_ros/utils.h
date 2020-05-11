@@ -7,6 +7,8 @@
 #include "auto_mapping_ros/graph_builder.h"
 #include "auto_mapping_ros/types.h"
 
+#include "../../aoc_tsp/aco.h"
+
 namespace amr
 {
 
@@ -199,6 +201,51 @@ template <typename Arithmetic>
 double distance(const std::array<Arithmetic, 2>& node1, const std::array<Arithmetic, 2>& node2)
 {
     return sqrt(pow(node1[0]-node2[0], 2) + pow(node1[1]-node2[1], 2));
+}
+
+aco::Graph convert_to_aoc_graph(Graph& graph)
+{
+    // TODO: Bug Fix (This is temporary bug fix for ids)
+    int count = 0;
+    for(auto& node: graph)
+    {
+        node.id = count++;
+    }
+
+    aco::Graph aco_graph;
+    std::vector<int> id_vec{};
+
+    std::unordered_map<int, int> original_id_to_aco_id;
+
+    for(const auto& node: graph)
+    {
+        int id = aco_graph.create_node_in_graph(node.x, node.y);
+        id_vec.emplace_back(id);
+        original_id_to_aco_id.insert(std::pair{node.id, id});
+    }
+
+    for(const auto& node: graph)
+    {
+        int aco_cur_id = -1;
+        const auto aco_cur_id_found = original_id_to_aco_id.find(node.id);
+        if(aco_cur_id_found != original_id_to_aco_id.end())
+        {
+            aco_cur_id = aco_cur_id_found->second;
+        }
+
+        for(const auto& neighbor: node.neighbors)
+        {
+            int aco_nbr_id = -1;
+            const auto aco_nbr_id_found = original_id_to_aco_id.find(neighbor->id);
+            if(aco_nbr_id_found != original_id_to_aco_id.end())
+            {
+                aco_nbr_id = aco_nbr_id_found->second;
+            }
+            aco_graph.add_edge(aco_cur_id, aco_nbr_id);
+        }
+    }
+
+    return aco_graph;
 }
 
 }
