@@ -134,7 +134,7 @@ include_directories(
 include_directories(${EIGEN3_INCLUDE_DIR})
 include_directories(${OpenCV_INCLUDE_DIRS})
 
-add_subdirectory(aoc_tsp)
+add_subdirectory(aco_router)
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
