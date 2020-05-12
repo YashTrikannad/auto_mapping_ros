@@ -7,8 +7,6 @@
 #include "auto_mapping_ros/graph_builder.h"
 #include "auto_mapping_ros/types.h"
 
-#include "../../aoc_tsp/types.h"
-
 namespace amr
 {
 

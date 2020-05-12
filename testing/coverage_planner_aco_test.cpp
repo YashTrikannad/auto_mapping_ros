@@ -2,11 +2,10 @@
 
 #include <ros/package.h>
 
-#include "auto_mapping_ros/coverage_planner.h"
 #include "auto_mapping_ros/graph_builder.h"
 #include "auto_mapping_ros/skeletonizer.h"
-#include "../aoc_tsp/tsp_solver.h"
-#include "../aoc_tsp/utils.h"
+#include "../aco_router/tsp_solver.h"
+#include "../aco_router/utils.h"
 
 int main()
 {
