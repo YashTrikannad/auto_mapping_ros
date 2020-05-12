@@ -2,10 +2,11 @@
 
 #include <ros/package.h>
 
-#include "../aoc_tsp/aco.h"
 #include "auto_mapping_ros/coverage_planner.h"
 #include "auto_mapping_ros/graph_builder.h"
 #include "auto_mapping_ros/skeletonizer.h"
+#include "../aoc_tsp/tsp_solver.h"
+#include "../aoc_tsp/utils.h"
 
 int main()
 {
@@ -25,7 +26,7 @@ int main()
     auto graph = builder.get_graph();
 
     // Convert Graph to aoc::Graph
-    const auto aco_graph = amr::convert_to_aoc_graph(graph);
+    const auto aco_graph = convert_to_aco_graph(graph);
 
     // Set ACO Params
     aco::AcoParams params{.n_ants=10, .max_iters=100, .alpha=1, .beta=1, .rho=0.05};
@@ -34,7 +35,7 @@ int main()
     const auto sequence_node = aco::solve_tsp(aco_graph, params);
 
     std::vector<std::array<int, 2>> sequence;
-    for(const auto node: sequence_node)
+    for(const auto& node: sequence_node.first)
     {
         sequence.emplace_back(std::array<int, 2>{static_cast<int>(node.x), static_cast<int>(node.y)});
     }
