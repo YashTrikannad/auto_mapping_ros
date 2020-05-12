@@ -25,7 +25,7 @@ int main()
     auto graph = builder.get_graph();
 
     // Convert Graph to aoc::Graph
-    const auto aco_graph = convert_to_aco_graph(graph);
+    const auto aco_graph = aco::convert_to_aco_graph(graph);
 
     // Set ACO Params
     aco::AcoParams params{.n_ants=10, .max_iters=100, .alpha=1, .beta=1, .rho=0.05};
