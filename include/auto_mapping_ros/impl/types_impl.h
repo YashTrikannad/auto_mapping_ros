@@ -10,6 +10,24 @@ Node::Node(const std::array<int, 2> &node) :
 {
 }
 
+Node::Node(const std::array<int, 2> &node, int id) :
+        id(id),
+        x(node[0]),
+        y(node[1]),
+        mst_key(std::numeric_limits<int>::max()),
+        n_lane_intersections(0)
+{
+}
+
+Node::Node(int x, int y, int id) :
+        id(id),
+        x(x),
+        y(y),
+        mst_key(std::numeric_limits<int>::max()),
+        n_lane_intersections(0)
+{
+}
+
 bool Node::operator==(const Node &rhs) const
 {
     return (x == rhs.x) && (y == rhs.y);

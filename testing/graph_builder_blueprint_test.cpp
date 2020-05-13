@@ -21,7 +21,7 @@ int main()
     builder.build_graph();
     auto graph = builder.get_graph();
 
-    amr::print_graph_with_new_ids(graph);
+    amr::print_graph(graph);
 
     return 0;
 }
