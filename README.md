@@ -32,13 +32,29 @@ cd ..
 catkin_make
 ```
 
-Source the ROS environment before launching ROS nodes
+Source the ROS environment before launching ROS nodes in new terminal
 ```
 cd catkin_ws
 source devel/setup.bash
 ```
+**Launching Autonomous Mapper**
 
-Running your code. There are a lot of test codes to test specific modules. Example of one module shown below. (Skeletonization, Graph Builder and Coverage Planner do not require ROS so they can be run like a normal C++ file. They are not ROS nodes) 
+The first step is to find the best optimzed routes for the cars to follow. We run ant colony optimization (ACO) in background to get multiple routes for the available cars. Note- All cars may not be used depending on your capacity parameters for ACO. 
+
+To generate the csv files of the route sequences, you'll need to run the multi sequence generator and pass the number of available vehicles as an argument to it (2 in the below example).
+
+First launch roscore
+```
+cd catkin_ws
+source devel/setup.bash
+roscore
+```
+In new terminal, run the seqeunce creator
+```
+cd catkin_ws
+source devel/setup.bash
+rosrun auto_mapping_ros coverage_sequence_creator 2
+```
 
 
 <p align="center"><img src="media/multi_agent.gif" width="400" height="600">
