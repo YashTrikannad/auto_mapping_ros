@@ -1,6 +1,9 @@
 #ifndef AUTO_MAPPING_ROS_GRAPH_BUILDER_IMPL_H
 #define AUTO_MAPPING_ROS_GRAPH_BUILDER_IMPL_H
 
+#include <iostream>
+#include <unordered_set>
+
 #include "auto_mapping_ros/graph_builder.h"
 
 namespace amr
@@ -259,7 +262,10 @@ namespace amr
 
         trim_edges();
 
-        for (auto &node: graph_) {
+        graph_ = find_largest_connected_component();
+
+        for (auto &node: graph_)
+        {
             std::vector<double> neighbor_nodes_cost;
             for (const auto &neighbor_node: node.neighbors) {
                 const auto distance = static_cast<double>(
@@ -270,7 +276,6 @@ namespace amr
         }
     }
 
-// TODO: Fix Bug in this function
 /// Trims away edges to reduce overlapping edges
     void GraphBuilder::trim_edges() {
         for (auto &current_node: graph_) {
@@ -346,6 +351,63 @@ namespace amr
         auto dx = x_point - xx;
         auto dy = y_point - yy;
         return sqrt(dx * dx + dy * dy);
+    }
+
+    void GraphBuilder::run_dfs(Node* node,
+                               std::unordered_set<int>& visited_nodes,
+                               std::vector<Node>& current_connected_component)
+    {
+        // Node has already been visited
+        if(visited_nodes.find(node->id) != visited_nodes.end()) return;
+
+        // Add the current node to the visited
+        visited_nodes.insert(node->id);
+        current_connected_component.emplace_back(Node(node->x, node->y, node->id));
+
+        for(const auto& ngbr_node: node->neighbors)
+        {
+            run_dfs(ngbr_node, visited_nodes, current_connected_component);
+        }
+    }
+
+    void GraphBuilder::graph_subset(std::vector<Node>& subset_nodes)
+    {
+        auto get_node_ptr = [&](int id, Graph& graph){
+            for(auto& node: graph) if(node.id == id) return &node;
+        };
+
+        for(int i=0; i<subset_nodes.size(); i++)
+        {
+            std::vector<Node*> neighbors;
+            Node* main_graph_current_node = get_node_ptr(subset_nodes[i].id, graph_);
+
+            for(const auto& neighbor_node : main_graph_current_node->neighbors)
+            {
+                neighbors.emplace_back(get_node_ptr(neighbor_node->id, subset_nodes));
+            }
+            subset_nodes[i].neighbors = neighbors;
+        }
+    }
+
+    /// Finds the largest connected component in the graph
+    /// @details This function also creates new ids
+    Graph GraphBuilder::find_largest_connected_component()
+    {
+        std::vector<Node> largest_connected_component;
+        std::vector<Node> current_connected_component;
+        std::unordered_set<int> visited_nodes{};
+        for(auto& node: graph_)
+        {
+            current_connected_component.clear();
+            run_dfs(&node, visited_nodes, current_connected_component);
+            if(current_connected_component.size() > largest_connected_component.size())
+            {
+                largest_connected_component = current_connected_component;
+            }
+        }
+
+        graph_subset(largest_connected_component);
+        return largest_connected_component;
     }
 }
 

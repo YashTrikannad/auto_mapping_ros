@@ -10,6 +10,7 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 #include <set>
+#include <unordered_set>
 #include <utility>
 
 #include "auto_mapping_ros/landmarks.h"
@@ -120,6 +121,14 @@ private:
     /// Constructs the graph using the input feature cells (corners)
     /// @param corners
     void construct_graph(const std::vector<std::array<int, 2>> &corners);
+
+    void run_dfs(Node* node, std::unordered_set<int>& visited_nodes, std::vector<Node>& current_connected_component);
+
+    void graph_subset(std::vector<Node>& subset_nodes);
+
+    /// Finds the largest connected component in the graph
+    /// @details This function also creates new ids
+    Graph find_largest_connected_component();
 };
 
 }

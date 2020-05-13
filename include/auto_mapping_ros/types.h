@@ -26,6 +26,7 @@ struct Node
 };
 
 using Graph = std::vector<Node>;
+Graph deep_copy_graph(const Graph& graph);
 
 struct Plan
 {
