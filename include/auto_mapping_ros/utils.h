@@ -3,6 +3,10 @@
 
 #include <boost/algorithm/string.hpp>
 #include <fstream>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
 
 #include "auto_mapping_ros/types.h"
 

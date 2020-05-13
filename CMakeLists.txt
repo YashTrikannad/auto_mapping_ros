@@ -154,8 +154,6 @@ add_executable(skeletonizer_test testing/skeletonizer_test.cpp)
 add_executable(graph_builder_test testing/graph_builder_test.cpp)
 add_executable(frontier_finding_test testing/frontier_finding_test.cpp)
 add_executable(graph_builder_blueprint_test testing/graph_builder_blueprint_test.cpp)
-#add_executable(coverage_planner_test testing/coverage_planner_test.cpp)
-add_executable(coverage_planner_blueprint_test testing/coverage_planner_blueprint_test.cpp)
 add_executable(coverage_planner_aco_test testing/coverage_planner_aco_test.cpp)
 add_executable(coverage_sequence_creator src/coverage_sequence_csv_creator.cpp)
 #add_executable(global_planner_test testing/global_planner_test.cpp)
@@ -204,13 +202,6 @@ target_link_libraries(skeletonizer_test
 target_link_libraries(graph_builder_blueprint_test
         ${OpenCV_LIBS}
         -lconfig++
-        )
-
-target_link_libraries(coverage_planner_blueprint_test
-        ${catkin_LIBRARIES}
-        ${OpenCV_LIBS}
-        -lconfig++
-        acolib
         )
 
 target_link_libraries(coverage_planner_aco_test
