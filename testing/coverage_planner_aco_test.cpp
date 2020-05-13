@@ -1,15 +1,18 @@
 #define DEBUG 1
 
-#include <ros/package.h>
-
 #include "auto_mapping_ros/graph_builder.h"
 #include "auto_mapping_ros/skeletonizer.h"
-#include "../aco_router/tsp_solver.h"
 #include "../aco_router/utils.h"
+#include "../aco_router/vrp_solver.h"
 
-int main()
+int main(int argc, char* argv[])
 {
-    const auto filepath = ros::package::getPath("auto_mapping_ros") + "/maps/levine.jpg";
+    int n_vehicles = 1;
+    if(argc > 1)
+    {
+        n_vehicles = std::stoi(argv[1]);
+    }
+    const auto filepath = "/home/yash/yasht_ws/src/auto_mapping_ros/maps/levine.jpg";
 
     amr::Skeletonizer processor;
     processor.read_map(filepath);
@@ -28,19 +31,29 @@ int main()
     const auto aco_graph = aco::convert_to_aco_graph(graph);
 
     // Set ACO Params
-    aco::AcoParams params{.n_ants=10, .max_iters=100, .alpha=1, .beta=1, .rho=0.05};
+    aco::IacoParamas params{};
+    params.max_iters = 20;
+    params.alpha = 1;
+    params.beta = 1;
+    params.rho = 0.5;
+    params.vehicles_available = n_vehicles;
+    params.n_ants = -1;
+    params.max_route_per_vehicle = -1;
 
     // Find Best Sequence
-    const auto sequence_node = aco::solve_tsp(aco_graph, params);
+    const auto sequence_node = aco::solve_vrp(aco_graph, params);
 
-    std::vector<std::array<int, 2>> sequence;
-    for(const auto& node: sequence_node.first)
+    for(const auto & i : sequence_node.first)
     {
-        sequence.emplace_back(std::array<int, 2>{static_cast<int>(node.x), static_cast<int>(node.y)});
-    }
-    std::cout << "size of sequence: " << sequence.size();
+        std::vector<std::array<int, 2>> sequence;
+        for(const auto& node: i)
+        {
+            sequence.emplace_back(std::array<int, 2>{static_cast<int>(node.x), static_cast<int>(node.y)});
+        }
+        std::cout << "size of sequence: " << sequence.size();
 
-    amr::visualize_sequence_on_graph(map, graph, sequence);
+        amr::visualize_sequence_on_graph(map, graph, sequence);
+    }
 
     return 0;
 }

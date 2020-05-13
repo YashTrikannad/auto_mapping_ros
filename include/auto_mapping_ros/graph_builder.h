@@ -1,9 +1,6 @@
 #ifndef AUTO_MAPPING_ROS_GRAPH_BUILDER_H
 #define AUTO_MAPPING_ROS_GRAPH_BUILDER_H
 
-#include <ros/ros.h>
-#include <ros/package.h>
-
 #include <array>
 #include <iostream>
 #include <libconfig.h++>
@@ -46,7 +43,7 @@ public:
         libconfig::Config cfg;
         try
         {
-            const std::string filename = ros::package::getPath("auto_mapping_ros") + "/config/graph_builder.cfg";
+            const std::string filename = get_package_directory() + "/config/graph_builder.cfg";
             char *tab2 = new char [filename.length()+1];
             strcpy (tab2, filename.c_str());
             cfg.readFile(tab2);
@@ -128,7 +125,6 @@ private:
             if (cv::waitKey(1) & boundary_corners_.size() == 2) break;
         }
         cv::destroyWindow(window_name);
-        return;
     }
 
     /// Performs morphological operation of dilation on the input image
@@ -215,6 +211,8 @@ private:
             dense_corner_img.at<uchar>(corner[0], corner[1]) = 255;
         }
 
+//        const auto temp = compute_blob_centers(dense_corner_img);
+
         const auto dilated_dense_corner_img = dilate(dense_corner_img);
         return compute_blob_centers(dilated_dense_corner_img);
     }
@@ -236,6 +234,10 @@ private:
         normalize(dst, dst_norm, 0, 255, cv::NORM_MINMAX, CV_32FC1, cv::Mat());
         convertScaleAbs(dst_norm, dst_norm_scaled);
 
+        namedWindow("harris corner", cv::WINDOW_AUTOSIZE);
+        cv::imshow("harris corner", dst_norm_scaled);
+        cv::waitKey(0);
+
         std::vector<std::array<int, 2>> corner_points;
 
         for (int i = 0; i < dst_norm.rows; i++)
@@ -255,7 +257,7 @@ private:
         std::set<std::array<int, 2>> sparse_centroid_set(dense_corner_centroids.begin(), dense_corner_centroids.end());
         unique_sparse_centroids.assign(sparse_centroid_set.begin(), sparse_centroid_set.end());
 
-        std::cout << "There are " << unique_sparse_centroids.size() << " features detected in this image.";
+        std::cout << "There are " << unique_sparse_centroids.size() << " features detected in this image.\n";
         return unique_sparse_centroids;
     }
 
@@ -324,6 +326,7 @@ private:
         return false;
     }
 
+    // TODO: Fix Bug in this function
     /// Trims away edges to reduce overlapping edges
     void trim_edges()
     {
@@ -423,6 +426,15 @@ private:
             }
             node.neighbors_cost = neighbor_nodes_cost;
         }
+
+        std::vector<Node> pruned_graph{};
+        for(const auto& node: graph_)
+        {
+            if(node.neighbors.size() == 0) continue;
+            pruned_graph.emplace_back(node);
+        }
+
+        graph_ = pruned_graph;
     }
 };
 

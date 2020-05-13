@@ -200,6 +200,30 @@ double distance(const std::array<Arithmetic, 2>& node1, const std::array<Arithme
     return sqrt(pow(node1[0]-node2[0], 2) + pow(node1[1]-node2[1], 2));
 }
 
+std::string get_package_directory()
+{
+    std::string package_name = "auto_mapping_ros";
+    std::string cwd_str(__FILE__);
+    std::string package_dir;
+    std::string current_filename;
+    for(char i : cwd_str)
+    {
+        if(i != '/')
+        {
+            current_filename += i;
+            continue;
+        }
+        package_dir += current_filename + "/";
+        if(current_filename == package_name)
+        {
+            package_dir.pop_back();
+            break;
+        }
+        current_filename.clear();
+    }
+    return package_dir;
+}
+
 }
 
 

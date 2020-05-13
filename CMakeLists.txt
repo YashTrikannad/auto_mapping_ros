@@ -202,10 +202,8 @@ target_link_libraries(skeletonizer_test
         )
 
 target_link_libraries(graph_builder_blueprint_test
-        ${catkin_LIBRARIES}
         ${OpenCV_LIBS}
         -lconfig++
-        acolib
         )
 
 target_link_libraries(coverage_planner_blueprint_test
@@ -216,7 +214,6 @@ target_link_libraries(coverage_planner_blueprint_test
         )
 
 target_link_libraries(coverage_planner_aco_test
-        ${catkin_LIBRARIES}
         ${OpenCV_LIBS}
         -lconfig++
         acolib

@@ -1,8 +1,8 @@
 #define DEBUG 0
 
+#include <ros/ros.h>
 #include <ros/package.h>
 
-#include "auto_mapping_ros/coverage_planner.h"
 #include "auto_mapping_ros/graph_builder.h"
 #include "auto_mapping_ros/skeletonizer.h"
 #include "auto_mapping_ros/utils.h"
