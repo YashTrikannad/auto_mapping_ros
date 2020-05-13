@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
     {
         n_vehicles = std::stoi(argv[1]);
     }
-    const auto filepath = "/home/yash/yasht_ws/src/auto_mapping_ros/maps/levine.jpg";
+    const auto filepath = "/home/yash/yasht_ws/src/auto_mapping_ros/maps/levine_4.jpg";
 
     amr::Skeletonizer processor;
     processor.read_map(filepath);
@@ -32,13 +32,13 @@ int main(int argc, char* argv[])
 
     // Set ACO Params
     aco::IacoParamas params{};
-    params.max_iters = 20;
+    params.max_iters = 1000;
     params.alpha = 1;
     params.beta = 1;
     params.rho = 0.5;
     params.vehicles_available = n_vehicles;
-    params.n_ants = -1;
-    params.max_route_per_vehicle = -1;
+    params.n_ants = -1; /* Default - No of ants is equal to the no. of graph nodes */
+    params.max_route_per_vehicle = -1; /* Default - Capacity is calculated based on the no. of vehicles available */
 
     // Find Best Sequence
     const auto sequence_node = aco::solve_vrp(aco_graph, params);
@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
         {
             sequence.emplace_back(std::array<int, 2>{static_cast<int>(node.x), static_cast<int>(node.y)});
         }
-        std::cout << "size of sequence: " << sequence.size();
+        std::cout << "size of sequence: " << sequence.size() << std::endl;
 
         amr::visualize_sequence_on_graph(map, graph, sequence);
     }
