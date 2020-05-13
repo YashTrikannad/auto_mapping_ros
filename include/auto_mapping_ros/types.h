@@ -7,7 +7,6 @@
 /// Basic Cell of the Graph
 struct Node
 {
-    explicit Node(const std::array<int, 2> &node);
     explicit Node(const std::array<int, 2> &node, int id);
     explicit Node(int x, int y, int id);
 
@@ -19,15 +18,10 @@ struct Node
     std::vector<Node *> neighbors;
     std::vector<double> neighbors_cost;
 
-    // Coverage Planner Variables
-    double mst_key;
-    std::vector<Node *> mst_child;
-
     // Landmark Information
     int n_lane_intersections;
 
     bool operator==(const Node &rhs) const;
-    bool operator<(const Node &rhs) const;
     std::array<int, 2> get_location() const;
 };
 
