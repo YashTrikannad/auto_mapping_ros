@@ -175,8 +175,8 @@ add_dependencies(${PROJECT_NAME}_node ${fmt_star_EXXPORTED_TARGETS} fmt_star_gen
 target_link_libraries(${PROJECT_NAME}_node
     ${catkin_LIBRARIES}
     ${OpenCV_LIBS}
-    -lconfig++
     acolib
+    config++
     )
 
 target_link_libraries(graph_builder_test
@@ -196,8 +196,8 @@ target_link_libraries(frontier_finding_test
 target_link_libraries(skeletonizer_test
         ${catkin_LIBRARIES}
         ${OpenCV_LIBS}
-        -lconfig++
         acolib
+        -lconfig++
         )
 
 target_link_libraries(graph_builder_blueprint_test

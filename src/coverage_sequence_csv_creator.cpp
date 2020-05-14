@@ -10,11 +10,8 @@
 #include "../aco_router/utils.h"
 #include "../aco_router/vrp_solver.h"
 
-int main(int argc, char* argv[])
+int main()
 {
-    std::vector<std::string> cmd_args{};
-    ros::removeROSArgs(argc, argv, cmd_args);
-    int n_vehicles = std::stoi(cmd_args.back());
     const auto filepath = ros::package::getPath("auto_mapping_ros") + "/maps/levine_4.jpg";
     const auto csv_filepath = ros::package::getPath("auto_mapping_ros") + "/csv/sequence";
 
@@ -35,18 +32,8 @@ int main(int argc, char* argv[])
     // Get Initial Point
     int init_id = amr::get_closest_clicked_node_on_map(map, aco_graph);
 
-    // Set ACO Params
-    aco::IacoParamas params;
-    params.max_iters = 100;
-    params.alpha = 1;
-    params.beta = 1;
-    params.rho = 0.5;
-    params.vehicles_available = n_vehicles;
-    params.n_ants = -1;
-    params.max_route_per_vehicle = -1;
-
     // Find Best Sequence
-    const auto sequences_node = aco::solve_vrp(aco_graph, params, init_id);
+    const auto sequences_node = aco::solve_vrp(aco_graph, init_id);
 
     for(int i=0; i< sequences_node.first.size(); i++)
     {

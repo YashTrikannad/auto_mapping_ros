@@ -7,11 +7,6 @@
 
 int main(int argc, char* argv[])
 {
-    int n_vehicles = 1;
-    if(argc > 1)
-    {
-        n_vehicles = std::stoi(argv[1]);
-    }
     const auto filepath = "/home/yash/yasht_ws/src/auto_mapping_ros/maps/levine_4.jpg";
 
     amr::Skeletonizer processor;
@@ -30,18 +25,8 @@ int main(int argc, char* argv[])
     // Convert Graph to aoc::Graph
     const auto aco_graph = aco::convert_to_aco_graph(graph);
 
-    // Set ACO Params
-    aco::IacoParamas params{};
-    params.max_iters = 1000;
-    params.alpha = 1;
-    params.beta = 1;
-    params.rho = 0.5;
-    params.vehicles_available = n_vehicles;
-    params.n_ants = -1; /* Default - No of ants is equal to the no. of graph nodes */
-    params.max_route_per_vehicle = -1; /* Default - Capacity is calculated based on the no. of vehicles available */
-
     // Find Best Sequence
-    const auto sequence_node = aco::solve_vrp(aco_graph, params);
+    const auto sequence_node = aco::solve_vrp(aco_graph);
 
     for(const auto & i : sequence_node.first)
     {
