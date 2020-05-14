@@ -9,6 +9,7 @@
 #include <opencv2/imgproc.hpp>
 
 #include "auto_mapping_ros/types.h"
+#include "../aco_router/types.h"
 
 namespace amr
 {
@@ -20,6 +21,8 @@ void print_graph(const Graph& graph);
 void print_graph_with_new_ids(Graph& graph);
 
 void visualize_graph(const cv::Mat& map, const Graph& graph);
+
+int get_closest_clicked_node_on_map(const cv::Mat& map, const aco::Graph& graph);
 
 void visualize_sequence_on_graph(
         const cv::Mat& map, const Graph& graph, const std::vector<std::array<int, 2>>& sequence);

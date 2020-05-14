@@ -115,7 +115,7 @@ find_package(Eigen3 REQUIRED)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-#  LIBRARIES auto_mapping_ros
+  LIBRARIES aco_router
   CATKIN_DEPENDS roscpp rospy roslib std_msgs
 #  DEPENDS system_lib
 )
@@ -127,7 +127,8 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
- include
+  aco_router
+  include
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -202,6 +203,7 @@ target_link_libraries(skeletonizer_test
 target_link_libraries(graph_builder_blueprint_test
         ${OpenCV_LIBS}
         -lconfig++
+        acolib
         )
 
 target_link_libraries(coverage_planner_aco_test

@@ -1,4 +1,4 @@
-#define DEBUG 0
+#define DEBUG 1
 
 #include <ros/ros.h>
 #include <ros/package.h>
@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
     std::vector<std::string> cmd_args{};
     ros::removeROSArgs(argc, argv, cmd_args);
     int n_vehicles = std::stoi(cmd_args.back());
-    const auto filepath = ros::package::getPath("auto_mapping_ros") + "/maps/levine.jpg";
+    const auto filepath = ros::package::getPath("auto_mapping_ros") + "/maps/levine_4.jpg";
     const auto csv_filepath = ros::package::getPath("auto_mapping_ros") + "/csv/sequence";
 
     amr::Skeletonizer processor;
@@ -32,9 +32,12 @@ int main(int argc, char* argv[])
     auto graph = builder.get_graph();
     auto aco_graph = aco::convert_to_aco_graph(graph);
 
+    // Get Initial Point
+    int init_id = amr::get_closest_clicked_node_on_map(map, aco_graph);
+
     // Set ACO Params
     aco::IacoParamas params;
-    params.max_iters = 20;
+    params.max_iters = 100;
     params.alpha = 1;
     params.beta = 1;
     params.rho = 0.5;
@@ -43,7 +46,7 @@ int main(int argc, char* argv[])
     params.max_route_per_vehicle = -1;
 
     // Find Best Sequence
-    const auto sequences_node = aco::solve_vrp(aco_graph, params);
+    const auto sequences_node = aco::solve_vrp(aco_graph, params, init_id);
 
     for(int i=0; i< sequences_node.first.size(); i++)
     {
@@ -54,6 +57,7 @@ int main(int argc, char* argv[])
         }
         const auto current_csv_filepath = csv_filepath + "_" + std::to_string(i+1) + ".csv";
         amr::write_sequence_to_csv(current_sequence, current_csv_filepath);
+        amr::visualize_sequence_on_graph(map, graph, current_sequence);
     }
 
     return 0;

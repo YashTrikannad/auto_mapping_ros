@@ -4,6 +4,8 @@
 #include "auto_mapping_ros/types.h"
 #include "auto_mapping_ros/utils.h"
 
+#include "../aco_router/types.h"
+
 namespace amr
 {
 
@@ -67,6 +69,65 @@ namespace amr
         namedWindow( "Visual Graph", cv::WINDOW_AUTOSIZE);
         imshow( "Visual Graph", visual_graph );
         cv::waitKey(0);
+    }
+
+    static std::array<int, 2> clicked_point;
+    static bool clicked;
+    void get_clicked_point(int event, int x, int y, int flags, void *userdata)
+    {
+        if (event == cv::EVENT_LBUTTONDOWN)
+        {
+            clicked_point = std::array<int, 2>{y, x};
+            std::cout << "Registered click at: (" << clicked_point[0] << ", " << clicked_point[1] << ")\n";
+            clicked = true;
+        }
+    }
+
+    int get_closest_clicked_node_on_map(const cv::Mat& map, aco::Graph& graph)
+    {
+        clicked_point = {};
+        clicked = false;
+        cv::Mat visual_graph(map.size(), CV_8UC3, cv::Vec3b(0, 0, 0));
+
+        for(int i=0; i < map.rows; i++)
+        {
+            for(int j=0; j < map.cols; j++)
+            {
+                if (map.at<uchar>(i, j) > 200)
+                {
+                    visual_graph.at<cv::Vec3b>(i, j) = cv::Vec3b(255, 255, 255);
+                }
+            }
+        }
+
+        for(const auto& node : graph)
+        {
+            cv::circle(visual_graph, {static_cast<int>(node.y), static_cast<int>(node.x)} , 4, cv::Scalar(100, 0, 0));
+        }
+
+        const std::string window_name = "Initial Depot Registration";
+        cv::namedWindow(window_name, cv::WINDOW_AUTOSIZE);
+        cv::setMouseCallback(window_name, get_clicked_point, NULL);
+        while (true)
+        {
+            cv::imshow(window_name, visual_graph);
+            if (cv::waitKey(1) && clicked==true) break;
+        }
+        clicked = false;
+        cv::destroyWindow(window_name);
+
+        int closest_node_id = -1;
+        double closest_node_distance = std::numeric_limits<double>::max();
+        for(const auto& node : graph)
+        {
+            double distance = sqrt(pow(node.x - clicked_point[0], 2) + pow(node.y - clicked_point[1], 2));
+            if(distance < closest_node_distance)
+            {
+                closest_node_distance = distance;
+                closest_node_id = node.id;
+            }
+        }
+        return closest_node_id;
     }
 
     void visualize_sequence_on_graph(

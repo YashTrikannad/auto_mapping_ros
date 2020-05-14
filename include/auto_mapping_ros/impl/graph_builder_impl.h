@@ -37,7 +37,8 @@ namespace amr
     }
 
 /// Builds the graph
-    void GraphBuilder::build_graph() {
+    void GraphBuilder::build_graph()
+    {
         register_boundary();
         const auto corners = find_corners();
         construct_graph(corners);
