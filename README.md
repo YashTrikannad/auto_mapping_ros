@@ -41,20 +41,26 @@ source devel/setup.bash
 
 The first step is to find the best optimzed routes for the cars to follow. We run ant colony optimization (ACO) in background to get multiple routes for the available cars. Note- All cars may not be used depending on your capacity parameters for ACO. 
 
-To generate the csv files of the route sequences, you'll need to run the multi sequence generator and pass the number of available vehicles as an argument to it (2 in the below example).
+To generate the csv files of the route sequences, you'll need to run the multi sequence generator. The multi sequence generator depends on configuration parameters inside the [aco_router](https://github.com/YashTrikannad/aco_router/blob/8964081f2319e5ae4dd99a25f29365ba24645b78/config.cfg). 
 
-First launch roscore
+
+1. Launch roscore
 ```
 cd catkin_ws
 source devel/setup.bash
 roscore
 ```
-In new terminal, run the seqeunce creator
+2. In new terminal, run the seqeunce creator
 ```
 cd catkin_ws
 source devel/setup.bash
-rosrun auto_mapping_ros coverage_sequence_creator 2
+rosrun auto_mapping_ros coverage_sequence_creator
 ```
+3. When you see a window popping up with your map titled as *Functional Area Registration*, click on the top left corner and then the bottom right corner which describes the rectangular area where you want the auto mapper to function.
+
+4. After the graph is generated, a window will pop up asking you for the initial depot (starting position for your cars). Click on one of the nodes where you want your cars to start. 
+
+This should generate sequences in [csv folder](https://github.com/YashTrikannad/auto_mapping_ros/tree/master/csv) for ideal number of cars <= vehicles_available parameter set in the config.
 
 
 <p align="center"><img src="media/multi_agent.gif" width="400" height="600">
