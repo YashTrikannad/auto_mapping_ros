@@ -1,10 +1,21 @@
 # auto_mapping_ros
 Auto Mapping ROS software for autonomously constructing a High Definition Map using Multiple Robots.
 
-This project is still under development and the goal is to develop a ROS service which has the ability to autonomously navigate a blueprint to build a high definition map using SLAM using multiple autonomous robots (F110 Cars).
+This application provides the user with the ability to autonomously navigate a blueprint/floorplans autonomously and cover the entire free space to build a high definition map using SLAM Software (Eg. Google Cartographer) using multiple autonomous robots (F110 Cars).
 
 <p align="center"><img src="media/auto_mapping_ros.jpg" width="400" height="600">
 </p>
+
+**Current Capabilities**
+- Construct Graph that covers the free space in the user defined area from image of map
+- Run Vehicle Routing for assigning each vehicle the locations that they need to explore
+- Autonomously navigate multiple cars on the routes decided for them
+
+**Capabilities to be added in future**
+- Add set of complex maneouvres Eg. Reverse, Car interactions
+- Add a local planner layer between the global planner (FMT Star) and controller (pure pursuit)
+- Add Start Stop Signals for cars
+- Explore the use of *set of commands (go right, take second left) + wall follower* instead of a the current planning pipeline where reasonable estimate of current pose of robot (localization) is very important. 
 
 
 **How to run this code:**
