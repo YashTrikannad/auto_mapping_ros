@@ -10,8 +10,10 @@
 #include <geometry_msgs/PoseStamped.h>
 
 #include <utility>
+#include <std_msgs/Bool.h>
 
 #include "auto_mapping_ros/global_planner.h"
+#include "auto_mapping_ros/maneuvers.h"
 #include "auto_mapping_ros/utils.h"
 #include "fmt_star/planner.h"
 
@@ -36,11 +38,13 @@ public:
         node_handle_->getParam("csv_filepath", csv_relative_filepath);
         csv_relative_filepath = csv_relative_filepath + "_" + std::to_string(local_planner_id_) + ".csv";
 
-        std::string pose_topic, drive_topic;
+        std::string pose_topic, drive_topic, brake_topic;
         node_handle_->getParam("pose_topic", pose_topic);
         pose_topic = pose_topic + "_" + std::to_string(local_planner_id_);
         node_handle_->getParam("drive_topic", drive_topic);
         drive_topic = drive_topic + "_" + std::to_string(local_planner_id_);
+        node_handle_->getParam("brake_topic", brake_topic);
+        brake_topic = brake_topic + "_" + std::to_string(local_planner_id_);
 
         node_handle_->getParam("base_frame", base_frame_);
         base_frame_ = "racecar" + std::to_string(local_planner_id_)  + "/" + base_frame_;
@@ -48,6 +52,7 @@ public:
 
         pose_sub_ = node_handle_->subscribe(pose_topic, 5, &LocalPlanner::pose_callback, this);
         drive_pub_ = node_handle_->advertise<ackermann_msgs::AckermannDriveStamped>(drive_topic, 1);
+        brake_pub_ = node_handle_->advertise<std_msgs::Bool>(brake_topic, 1);
 
         node_handle_->getParam("lookahead_distance", lookahead_distance_);
 
@@ -122,6 +127,7 @@ private:
     std::shared_ptr<ros::NodeHandle> node_handle_;
     ros::Subscriber pose_sub_;
     ros::Publisher drive_pub_;
+    ros::Publisher brake_pub_;
     tf2_ros::Buffer tf_buffer_;
     tf2_ros::TransformListener tf_listener_;
 
@@ -166,7 +172,7 @@ private:
     PlannerNode get_best_track_point(const std::vector<PlannerNode>& way_point_data)
     {
         double closest_distance = std::numeric_limits<double>::max();
-        PlannerNode best_node{};
+        PlannerNode best_node{-1, -1};
 
         for(const auto& way_point: way_point_data)
         {
@@ -178,6 +184,13 @@ private:
                 closest_distance = lookahead_diff;
                 best_node = way_point;
             }
+        }
+
+        if(best_node == PlannerNode{-1, -1})
+        {
+            // TODO: Execute Reverse
+            ROS_INFO("Pure Pursuit Failed to Find a Point in Front. Executing Stop.");
+            stop_vehicle(&brake_pub_);
         }
 
         ROS_DEBUG("closest_way_point: %f, %f", static_cast<double>(best_node[0]), static_cast<double>(best_node[1]));

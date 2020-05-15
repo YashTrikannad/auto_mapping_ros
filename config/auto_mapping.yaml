@@ -19,6 +19,7 @@ distance_threshold : 3.0
 # Topics to publish and subscribe to
 pose_topic: "gt_pose"
 drive_topic: "nav"
+brake_topic: "brake_bool"
 
 # Frame Names
 base_frame: "base_link"
