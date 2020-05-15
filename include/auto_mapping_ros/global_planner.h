@@ -47,69 +47,12 @@ public:
         node_handle_->getParam("planner_name", planner_name);
     };
 
-    /// Constructor when sequence is already expressed in ros map-coordinates
-    /// @param sequence
-    /// @param node_handle
-    /// @param resolution
-    explicit GlobalPlanner(const std::vector<std::array<int, 2>>& sequence,
-                  std::shared_ptr<ros::NodeHandle> node_handle, double resolution):
-            current_tracking_node_index_(0),
-            current_goal_index_(0),
-            current_position_{-1, -1},
-            sequence_(amr::translate_vector_of_indices_to_xy(sequence, resolution)),
-            node_handle_(std::move(node_handle)),
-            client_("fmt_star_server", true),
-            first_plan_(true),
-            new_plan_available_(false),
-            distance_threshold_(0)
-    {
-        ROS_INFO("Global Planner is waiting for action server to start.");
-        client_.waitForServer();
-        ROS_INFO("Action server started");
-        std::string planner_name;
-        node_handle_->getParam("planner_name", planner_name);
-    };
-
-    /// Constructor when sequence is not expressed in ros map-coordinates
-    /// @param sequence
-    /// @param node_handle
-    explicit GlobalPlanner(std::vector<std::array<double, 2>>  sequence,
-                  std::shared_ptr<ros::NodeHandle> node_handle):
-            current_tracking_node_index_(0),
-            current_goal_index_(0),
-            current_position_{-1, -1},
-            sequence_(std::move(sequence)),
-            node_handle_(std::move(node_handle)),
-            client_("fmt_star_server", true),
-            first_plan_(true),
-            new_plan_available_(false),
-            distance_threshold_(0)
-    {
-        ROS_INFO("Global Planner is waiting for action server to start.");
-        client_.waitForServer();
-        ROS_INFO("Action server started");
-        std::string planner_name;
-        node_handle_->getParam("planner_name", planner_name);
-    };
-
     /// Initializes the Global Planner with the sequence (coordinates of sequence already same as in ROS Map)
     /// @param sequence
-    std::vector<PlannerNode> init(const std::vector<PlannerNode>& sequence)
+    std::vector<PlannerNode> init(const std::vector<PlannerNode>& sequence, double distance_threshold)
     {
         sequence_.clear();
         sequence_ = sequence;
-        ROS_INFO("Global Planner Initialized");
-        return sequence_;
-    }
-
-    /// Initializes the Global Planner by first translating non ros sequence in compatible format and then initializes
-    /// the sequence
-    /// @param sequence
-    /// @param resolution
-    std::vector<PlannerNode> translate_and_init(const std::vector<std::array<int, 2>>& sequence, double resolution, double distance_threshold)
-    {
-        sequence_.clear();
-        sequence_ = amr::translate_vector_of_indices_to_xy(sequence, resolution);
         distance_threshold_ = distance_threshold;
         ROS_INFO("Global Planner Initialized");
         return sequence_;
@@ -142,8 +85,8 @@ public:
             auto updated_position = PlannerNode{-1, -1};
             while(updated_position == PlannerNode{-1, -1})
             {
-                ROS_INFO("Global Planner waiting for pose update ...");
-                sleep(1.0);
+                ROS_DEBUG("Global Planner waiting for new goal ...");
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 current_position_mutex_.lock();
                 updated_position = current_position_;
                 current_position_mutex_.unlock();
@@ -221,7 +164,7 @@ private:
     /// @param current_position
     void update_start(const PlannerNode &current_position)
     {
-        ROS_DEBUG("Start Position: %f, %f", current_position[0], current_position[1]);
+        ROS_INFO("Start Position: %f, %f", current_position[0], current_position[1]);
         start_.pose.position.x = current_position[0];
         start_.pose.position.y = current_position[1];
         start_.pose.position.z = 0;
@@ -234,7 +177,7 @@ private:
     /// Update the end position to the next index in the sequence
     void update_end()
     {
-        ROS_DEBUG("End Position: %f, %f", sequence_[current_goal_index_][0], sequence_[current_goal_index_][1]);
+        ROS_INFO("End Position: %f, %f", sequence_[current_goal_index_][0], sequence_[current_goal_index_][1]);
         end_.pose.position.x = sequence_[current_goal_index_][0];
         end_.pose.position.y = sequence_[current_goal_index_][1];
         end_.pose.position.z = 0;

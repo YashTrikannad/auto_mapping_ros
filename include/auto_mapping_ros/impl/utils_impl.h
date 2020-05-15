@@ -234,24 +234,6 @@ namespace amr
         }
     }
 
-    std::array<double, 2> translate_indices_to_xy(const std::array<int, 2>& node_on_previous_map, double resolution)
-    {
-        const double x = node_on_previous_map[0]*resolution;
-        const double y = node_on_previous_map[1]*resolution;
-        return std::array<double, 2>{y, x};
-    }
-
-    std::vector<std::array<double, 2>> translate_vector_of_indices_to_xy(
-            const std::vector<std::array<int, 2>>& vector_of_nodes, double resolution)
-    {
-        std::vector<std::array<double, 2>> vector_of_locations{};
-        for(const auto& node: vector_of_nodes)
-        {
-            vector_of_locations.emplace_back(translate_indices_to_xy(node, resolution));
-        }
-        return vector_of_locations;
-    }
-
     template <typename Arithmetic>
     double distance(const std::array<Arithmetic, 2>& node1, const std::array<Arithmetic, 2>& node2)
     {

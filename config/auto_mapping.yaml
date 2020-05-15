@@ -7,8 +7,11 @@ csv_filepath: "/csv/sequence"
 # A good estimate is 0-2r (According to the implementation explanation given in RI, CMU)
 lookahead_distance : 0.75
 
-# Map Resolution (meters/pixel)
-resolution : 0.05
+# Non ROS Map Values
+# (User needs to change these values when changing maps)
+non_ros_map_width : 1355
+non_ros_map_height : 1134
+switch_xy : true
 
 # Distance threshold to start planning for the next node
 distance_threshold : 3.0

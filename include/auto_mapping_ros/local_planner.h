@@ -13,6 +13,7 @@
 
 #include "auto_mapping_ros/global_planner.h"
 #include "auto_mapping_ros/utils.h"
+#include "fmt_star/planner.h"
 
 namespace amr
 {
@@ -49,14 +50,49 @@ public:
         drive_pub_ = node_handle_->advertise<ackermann_msgs::AckermannDriveStamped>(drive_topic, 1);
 
         node_handle_->getParam("lookahead_distance", lookahead_distance_);
-        node_handle_->getParam("resolution", resolution_);
+
+        // Get ROS Map
+        auto input_map = ros::topic::waitForMessage<nav_msgs::OccupancyGrid>("map", ros::Duration(0.1));
+        while(input_map == nullptr || input_map->data.empty())
+        {
+            ROS_WARN("Waiting for Map Message on topic: %s", "map");
+            input_map = ros::topic::waitForMessage<nav_msgs::OccupancyGrid>("map", ros::Duration(1));
+        }
+        ROS_INFO("Map Received");
+
+        // Update ROS Map Parameters
+        resolution_ = input_map->info.resolution;
+        double origin_x = input_map->info.origin.position.x;
+        double origin_y = input_map->info.origin.position.y;
+        int ros_map_width_cells = input_map->info.width;
+        int ros_map_height_cells = input_map->info.height;
+
         node_handle_->getParam("distance_threshold", distance_threshold_);
         node_handle_->getParam("velocity", velocity_);
+
+        // Update Non ROS Map Params
+        double non_ros_map_width;
+        node_handle_->getParam("non_ros_map_width", non_ros_map_width);
+        double non_ros_map_height;
+        node_handle_->getParam("non_ros_map_height", non_ros_map_height);
+        bool switch_xy;
+        node_handle_->getParam("switch_xy", switch_xy);
 
         std::vector<std::array<int, 2>> coverage_sequence_non_ros_map;
         const auto csv_filepath = ros::package::getPath(package_name) + csv_relative_filepath;
         amr::read_sequence_from_csv(&coverage_sequence_non_ros_map, csv_filepath);
-        coverage_sequence_ = global_planner_.translate_and_init(coverage_sequence_non_ros_map, resolution_, distance_threshold_);
+
+        // Translate non ros sequence to ros
+        const auto coverage_sequence_ros_map = fmt_star::translate_sequence_to_ros_coords(coverage_sequence_non_ros_map,
+                non_ros_map_width,
+                non_ros_map_height,
+                switch_xy,
+                ros_map_width_cells*resolution_,
+                ros_map_height_cells*resolution_,
+                origin_x,
+                origin_y);
+
+        coverage_sequence_ = global_planner_.init(coverage_sequence_ros_map, distance_threshold_);
 
         std::thread global_planning_thread(&GlobalPlanner::start_global_planner, &global_planner_);
         global_planning_thread.detach();

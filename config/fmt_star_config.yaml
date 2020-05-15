@@ -37,4 +37,4 @@ visualization: false
 minimal_sampling: true
 
 # When minimal sampling is on, the amount of sampling size around the (start-goal) rectangle (in meters)
-sampling_tolerance: 3.0
+sampling_tolerance: 5.0
