@@ -17,7 +17,7 @@
 #include <mutex>
 
 #include "auto_mapping_ros/utils.h"
-#include "fmt_star/plan_srv.h"
+#include "fmt_star/planAction.h"
 
 namespace amr
 {
