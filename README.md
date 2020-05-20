@@ -39,7 +39,10 @@ Clone and Make this repository
 ```
 cd catkin_ws/src
 git clone https://github.com/YashTrikannad/auto_mapping_ros.git
-cd ..
+cd auto_mapping_ros
+git submodule init
+git submodule update --remote
+cd ../..
 catkin_make
 ```
 
