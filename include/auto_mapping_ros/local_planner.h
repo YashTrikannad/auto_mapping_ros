@@ -8,6 +8,7 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2_ros/transform_listener.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <sensor_msgs/LaserScan.h>
 
 #include <utility>
 #include <std_msgs/Bool.h>
@@ -16,6 +17,19 @@
 #include "auto_mapping_ros/maneuvers.h"
 #include "auto_mapping_ros/utils.h"
 #include "fmt_star/planner.h"
+
+#include "auto_mapping_ros/occgrid.hpp"
+#include "auto_mapping_ros/visualizer.hpp"
+#include "auto_mapping_ros/transforms.hpp"
+#include "auto_mapping_ros/trajectory_planner.hpp"
+#include "auto_mapping_ros/mpc.hpp"
+#include "auto_mapping_ros/input.hpp"
+#include <visualization_msgs/MarkerArray.h>
+#include <visualization_msgs/Marker.h>
+#include "OsqpEigen/OsqpEigen.h"
+
+#include <atomic>
+
 
 namespace amr
 {
@@ -29,28 +43,35 @@ public:
             global_planner_(node_handle_),
             coverage_sequence_(),
             last_updated_pose_(),
-            current_plan_()
+            current_plan_(),
+            occ_grid_(*node_handle_),
+            trajp_(*node_handle_),
+            mpc_(*node_handle_)
     {
         local_planner_id_ = ++local_planner_counter_;
 
-        std::string package_name, csv_relative_filepath;
+        std::string package_name, csv_relative_filepath, csv_localtraj_filepath;
         node_handle_->getParam("package_name", package_name);
         node_handle_->getParam("csv_filepath", csv_relative_filepath);
+        node_handle_->getParam("csv_localtraj", csv_localtraj_filepath);
         csv_relative_filepath = csv_relative_filepath + "_" + std::to_string(local_planner_id_) + ".csv";
 
-        std::string pose_topic, drive_topic, brake_topic;
+        std::string pose_topic, drive_topic, brake_topic, scan_topic;
         node_handle_->getParam("pose_topic", pose_topic);
         pose_topic = pose_topic + "_" + std::to_string(local_planner_id_);
         node_handle_->getParam("drive_topic", drive_topic);
         drive_topic = drive_topic + "_" + std::to_string(local_planner_id_);
         node_handle_->getParam("brake_topic", brake_topic);
         brake_topic = brake_topic + "_" + std::to_string(local_planner_id_);
+        node_handle_->getParam("scan_topic", scan_topic);
+        scan_topic = scan_topic + "_" + std::to_string(local_planner_id_);
 
         node_handle_->getParam("base_frame", base_frame_);
         base_frame_ = "racecar" + std::to_string(local_planner_id_)  + "/" + base_frame_;
         node_handle_->getParam("map_frame", map_frame_);
 
         pose_sub_ = node_handle_->subscribe(pose_topic, 5, &LocalPlanner::pose_callback, this);
+        scan_sub_ = node_handle_->subscribe(scan_topic, 5, &LocalPlanner::scan_callback, this);
         drive_pub_ = node_handle_->advertise<ackermann_msgs::AckermannDriveStamped>(drive_topic, 1);
         brake_pub_ = node_handle_->advertise<std_msgs::Bool>(brake_topic, 1);
 
@@ -85,6 +106,7 @@ public:
 
         std::vector<std::array<int, 2>> coverage_sequence_non_ros_map;
         const auto csv_filepath = ros::package::getPath(package_name) + csv_relative_filepath;
+        std::string csv_localtraj_path = ros::package::getPath(package_name) + csv_localtraj_filepath;
         amr::read_sequence_from_csv(&coverage_sequence_non_ros_map, csv_filepath);
 
         // Translate non ros sequence to ros
@@ -102,6 +124,20 @@ public:
         std::thread global_planning_thread(&GlobalPlanner::start_global_planner, &global_planner_);
         global_planning_thread.detach();
         ROS_INFO("auto_mapping_ros node is now running!");
+
+        current_pose_.position.x = 0;
+        current_pose_.position.y = 0;
+        current_pose_.position.z = 0;
+        current_pose_.orientation.x = 0;
+        current_pose_.orientation.y = 0;
+        current_pose_.orientation.z = 0;
+        current_pose_.orientation.w = 1;
+        trajp_.ReadTrajectories(csv_localtraj_path);
+        trajp_.Trajectory2world(current_pose_);
+        ROS_INFO("Read_trajectories");
+        std::cout<<"reaaaaad"<<std::endl;
+        std::thread t(&LocalPlanner::drive_loop, this);
+        t.detach();
     }
 
     /// Updates the current pose of the agent
@@ -110,26 +146,66 @@ public:
     {
         last_updated_pose_[0] = pose_msg->pose.position.x;
         last_updated_pose_[1] = pose_msg->pose.position.y;
+        current_pose_ = pose_msg->pose;
         global_planner_.update_current_position(last_updated_pose_);
+        if (!first_pose_estimate_)
+        {
+            first_pose_estimate_ = true;
+        }
         const auto new_plan = global_planner_.get_new_plan();
         if(new_plan)
         {
             ROS_INFO("Updated Global Plan for Car %i", local_planner_id_);
             current_plan_ = new_plan.value();
         }
-        run_pure_pursuit(current_plan_, last_updated_pose_);
+        float current_angle = Transforms::GetCarOrientation(current_pose_);
+        State current_state(current_pose_.position.x, current_pose_.position.y, current_angle);
+
+        
+        if (first_scan_estimate_)
+        {
+            run_mpc(current_plan_,last_updated_pose_, current_state);
+        }
+        // run_pure_pursuit(current_plan_, last_updated_pose_);
+    }
+
+    void scan_callback(const sensor_msgs::LaserScan::ConstPtr &scan_msg)
+    {
+        if (first_pose_estimate_)
+        {
+            if (!first_scan_estimate_)
+            {
+                first_scan_estimate_ = true;
+            }
+            occ_grid_.FillOccGrid(current_pose_, scan_msg);
+            occ_grid_.Visualize();
+            mpc_.UpdateScan(scan_msg);
+
+        }
+        std::cout<<"scanning"<<std::endl;
     }
 
 private:
     int local_planner_id_;
     static int local_planner_counter_;
+    bool first_pose_estimate_ = false;
+    bool first_scan_estimate_ = false;
 
     std::shared_ptr<ros::NodeHandle> node_handle_;
     ros::Subscriber pose_sub_;
+    ros::Subscriber scan_sub_;
     ros::Publisher drive_pub_;
     ros::Publisher brake_pub_;
     tf2_ros::Buffer tf_buffer_;
     tf2_ros::TransformListener tf_listener_;
+
+    TrajectoryPlanner trajp_;
+    MPC mpc_;
+    OccGrid occ_grid_;
+    std::vector<Input> current_inputs_;
+    std::atomic<unsigned int> inputs_idx_;
+    std::pair<float, float> occ_offset_;
+    geometry_msgs::Pose current_pose_;
 
     double distance_threshold_;
     double lookahead_distance_;
@@ -169,6 +245,15 @@ private:
     }
 
 
+    Input GetNextInput()
+    {
+        if (inputs_idx_ >= current_inputs_.size())
+        {
+            // ROS_ERROR("Trajectory complete!");
+            return Input(0.2,-0.05);
+        }
+        return current_inputs_[inputs_idx_];
+    }
     PlannerNode get_best_track_point(const std::vector<PlannerNode>& way_point_data)
     {
         double closest_distance = std::numeric_limits<double>::max();
@@ -176,7 +261,7 @@ private:
 
         for(const auto& way_point: way_point_data)
         {
-            if(way_point[0] < 0) continue;
+            // if(way_point[0] < 0) continue;
             double distance = sqrt(way_point[0]*way_point[0] + way_point[1]*way_point[1]);
             double lookahead_diff = std::abs(distance - lookahead_distance_);
             if(lookahead_diff < closest_distance)
@@ -211,6 +296,53 @@ private:
         ROS_DEBUG("steering angle: %f", steering_angle);
         drive_msg.drive.speed = velocity_;
         drive_pub_.publish(drive_msg);
+    }
+
+    void run_mpc(const std::vector<PlannerNode>& reference_way_points,
+                          const PlannerNode& current_way_point, const State current_state)
+    {
+        const auto transformed_way_points = transform(reference_way_points, current_way_point);
+        const auto goal_way_point = get_best_track_point(transformed_way_points);
+        const auto steering_angle = 2*(goal_way_point[1])/(lookahead_distance_*lookahead_distance_);
+
+        std::pair<float, float> goal_to_track((float)goal_way_point[0],(float)goal_way_point[1]);
+        Input input_to_pass = GetNextInput();
+        input_to_pass.set_v(0);
+        
+        trajp_.Update(current_pose_, occ_grid_, goal_to_track);
+        trajp_.Visualize();
+
+        if (trajp_.best_trajectory_index() > -1)
+        {
+            vector<State> bestMiniPath = trajp_.best_minipath();
+            mpc_.Update(current_state,input_to_pass,bestMiniPath);
+            current_inputs_ = mpc_.solved_trajectory();
+            mpc_.Visualize();
+            inputs_idx_ = 0;
+        }
+    }
+
+    void drive_loop()
+    {
+        while (true)
+        {
+            if (first_pose_estimate_ && first_scan_estimate_)
+            {
+                ackermann_msgs::AckermannDriveStamped drive_msg;
+                Input input = GetNextInput();
+                if (trajp_.best_trajectory_index() < 0)
+                {
+                    input.set_v(0.2);
+                }
+                drive_msg.header.stamp = ros::Time::now();
+                drive_msg.drive.speed = input.v();
+                drive_msg.drive.steering_angle = input.steer_ang();
+                drive_pub_.publish(drive_msg);
+                int dt_ms = mpc_.dt()*1000;
+                inputs_idx_++;
+                std::this_thread::sleep_for(std::chrono::milliseconds(dt_ms));
+            }
+        }
     }
 };
 

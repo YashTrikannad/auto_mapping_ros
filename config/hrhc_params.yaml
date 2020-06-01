@@ -1,0 +1,87 @@
+
+#hrhc 
+q0: 10.0
+q1: 10.0
+q2: 0.0
+
+r0: 0.001
+r1: 0.00
+
+pose_topic: "/odom"
+scan_topic: "/scan"
+drive_topic: "/nav"
+
+horizon: 30
+dt: 0.01
+#occ_grid
+occ_size: 10
+occ_discrete: 0.1
+occ_dilation: 0.15
+cmaes_lookahead_1: -1.0
+cmaes_lookahead_2: 2.0
+switch_distance_threshold: 3.0
+
+#traj_planner
+num_traj: 20
+close_weight: 0.5
+MAX_HORIZON: 50
+rev_threshold: 2
+
+# Lanes
+lane_0: "csv/temp.csv"
+
+# desired input
+des_vel: 0.5
+des_steer: 0
+#constraints 
+umax: 0.5 #change dt if you change this
+umin: -0.5
+
+# slip angle 0.1
+# slip_p1_vel: 2.75
+# slip_p1_steer: 0.36
+# slip_p2_vel: 4.5
+# slip_p2_steer: 0.08
+
+# slip angle 0.2
+# slip_p1_vel: 3.1
+# slip_p1_steer: 0.4
+# slip_p2_vel: 4.5
+# slip_p2_steer: 0.15
+
+# slip angle 0.3
+# slip_p1_vel: 3.6
+# slip_p1_steer: 0.4
+# slip_p2_vel: 4.5
+# slip_p2_steer: 0.23
+
+# slip angle 0.45
+# slip_p1_vel: 4.2
+# slip_p1_steer: 0.41
+# slip_p2_vel: 4.5
+# slip_p2_steer: 0.36
+
+# slip angle unlimited?!?!?!
+slip_p1_vel: 5.2
+slip_p1_steer: 1.41
+slip_p2_vel: 5.5
+slip_p2_steer: 1.36
+
+follow_gap_thresh: 3
+state_lims: 1
+fov_divider: 1.5
+buffer: 3
+
+#rrt*
+max_goal_distance: 2.5
+min_goal_distance: 2.0
+goal_epsilon: 0.1
+max_expansion_dist: 0.5
+rrt_iters: 500
+look_ahead: 0.4
+angle_limit: 1.5
+steer_angle: 0.3
+rrt_radius_sq: 0.8
+shortcut_iters: 50
+
+

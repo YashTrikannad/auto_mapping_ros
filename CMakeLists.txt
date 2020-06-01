@@ -3,6 +3,9 @@ project(auto_mapping_ros)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++17)
+set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall")
 #set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
 
 ## Find catkin macros and libraries
@@ -16,10 +19,19 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   fmt_star
   geometry_msgs
+  sensor_msgs
   genmsg
   tf2_ros
   actionlib
   actionlib_msgs
+)
+
+set(CMAKE_PREFIX_PATH /usr/local/lib/cmake)
+find_package(
+  OsqpEigen
+)
+find_package(
+  osqp
 )
 
 find_package(OpenCV REQUIRED)
@@ -130,6 +142,9 @@ include_directories(
   aco_router
   include
   ${catkin_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIRS}
+  /usr/local/include/eigen3/Eigen 
+  /usr/local/include/osqp
 )
 
 include_directories(${EIGEN3_INCLUDE_DIR})
@@ -150,7 +165,19 @@ add_subdirectory(aco_router)
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(${PROJECT_NAME}_node node/auto_mapping_ros_node.cpp)
+add_executable(${PROJECT_NAME}_node node/auto_mapping_ros_node.cpp
+src/constraints.cpp
+src/cost.cpp
+src/input.cpp
+src/model.cpp
+src/mpc.cpp
+src/occgrid.cpp
+src/state.cpp
+src/trajectory_planner.cpp
+src/transforms.cpp
+src/visualizer.cpp
+src/trajectory.cpp)
+
 add_executable(skeletonizer_test testing/skeletonizer_test.cpp)
 add_executable(graph_builder_test testing/graph_builder_test.cpp)
 add_executable(frontier_finding_test testing/frontier_finding_test.cpp)
@@ -158,6 +185,7 @@ add_executable(graph_builder_blueprint_test testing/graph_builder_blueprint_test
 add_executable(coverage_planner_aco_test testing/coverage_planner_aco_test.cpp)
 add_executable(coverage_sequence_creator src/coverage_sequence_csv_creator.cpp)
 #add_executable(global_planner_test testing/global_planner_test.cpp)
+
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -172,11 +200,14 @@ add_executable(coverage_sequence_creator src/coverage_sequence_csv_creator.cpp)
 add_dependencies(${PROJECT_NAME}_node ${fmt_star_EXXPORTED_TARGETS} fmt_star_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
+
 target_link_libraries(${PROJECT_NAME}_node
     ${catkin_LIBRARIES}
     ${OpenCV_LIBS}
     acolib
     config++
+    stdc++fs
+    OsqpEigen::OsqpEigen osqp::osqp
     )
 
 target_link_libraries(graph_builder_test
