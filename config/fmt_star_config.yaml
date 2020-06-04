@@ -7,7 +7,7 @@ n_samples: 10000
 near_radius: 0.8
 
 # Obstacle Inflation Radius (Note: Calculated In cells)
-obstacle_inflation_radius: 5
+obstacle_inflation_radius: 7
 
 # No. of Collision checks between 2 points
 n_collision_checks: 5

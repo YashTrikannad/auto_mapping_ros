@@ -215,7 +215,6 @@ int TrajectoryPlanner::BestTrajectory(OccGrid &occ_grid, const geometry_msgs::Po
         best = best1;
     }
     cout<<best<<endl;
-    cout<<"prev"<<prev_rev_<<endl;
     
     
     if (!cmaes_point_pushed_)
@@ -248,7 +247,8 @@ int TrajectoryPlanner::BestTrajectory(OccGrid &occ_grid, const geometry_msgs::Po
         push.set_y(trajectories_world[max_horizon_ * best + ii].second);
         dx = (trajectories_world[max_horizon_ * best + ii].first) - (trajectories_world[max_horizon_ * best + ii - 1].first);
         dy = (trajectories_world[max_horizon_ * best + ii].second) - (trajectories_world[max_horizon_ * best + ii - 1].second);
-        ori = atan2(dy, dx);
+        // ori = atan2(dy, dx);
+        ori = 0;
         push.set_ori(ori);
         best_minipath_.push_back(push);
     }
@@ -256,7 +256,8 @@ int TrajectoryPlanner::BestTrajectory(OccGrid &occ_grid, const geometry_msgs::Po
     best_cmaes_point_.set_y(trajectories_world[max_horizon_ * best + horizon_-1].second);
     dx = (trajectories_world[max_horizon_ * best + horizon_-1].first) - (trajectories_world[max_horizon_ * best + horizon_ - 2].first);
     dy = (trajectories_world[max_horizon_ * best + horizon_-1].second) - (trajectories_world[max_horizon_ * best + horizon_ - 2].second);
-    ori = atan2(dy, dx);
+    // ori = atan2(dy, dx);
+    ori = 0;
     // cout << dx << "\t" << dy << "\t" << ori << endl;
     best_cmaes_point_.set_ori(ori);
     // cout<<best<<"is the best"<<endl;
@@ -320,7 +321,7 @@ void TrajectoryPlanner::Visualize()
 }
 void TrajectoryPlanner::Update(const geometry_msgs::Pose &current_pose, OccGrid &occ_grid, std::pair<float,float>& goal_to_track)
 {
-    //trajectory2miniworld(current_pose);
+    // trajectory2miniworld(current_pose);
     // distance_from_switch_ += Transforms::CalcDist(std::pair<float,float>(last_pose_.position.x, last_pose_.position.y), std::pair<float,float>(current_pose.position.x, current_pose.position.y));
     Trajectory2world(current_pose);
 

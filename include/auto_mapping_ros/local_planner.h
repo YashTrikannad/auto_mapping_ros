@@ -29,6 +29,8 @@
 #include "OsqpEigen/OsqpEigen.h"
 
 #include <atomic>
+#include <typeinfo>
+
 
 
 namespace amr
@@ -74,7 +76,8 @@ public:
         scan_sub_ = node_handle_->subscribe(scan_topic, 5, &LocalPlanner::scan_callback, this);
         drive_pub_ = node_handle_->advertise<ackermann_msgs::AckermannDriveStamped>(drive_topic, 1);
         brake_pub_ = node_handle_->advertise<std_msgs::Bool>(brake_topic, 1);
-
+        plan_pub_ = node_handle_->advertise<visualization_msgs::Marker>("current_plan", 1);
+    
         node_handle_->getParam("lookahead_distance", lookahead_distance_);
 
         // Get ROS Map
@@ -105,8 +108,10 @@ public:
         node_handle_->getParam("switch_xy", switch_xy);
 
         std::vector<std::array<int, 2>> coverage_sequence_non_ros_map;
-        const auto csv_filepath = ros::package::getPath(package_name) + csv_relative_filepath;
-        std::string csv_localtraj_path = ros::package::getPath(package_name) + csv_localtraj_filepath;
+        // const auto csv_filepath = ros::package::getPath(package_name) + csv_relative_filepath;
+        const auto csv_filepath = "/home/saumya/summer_2020/catkin_ws/src/auto_mapping_ros" + csv_relative_filepath;
+        // std::string csv_localtraj_path = ros::package::getPath(package_name) + csv_localtraj_filepath;
+        std::string csv_localtraj_path = "/home/saumya/summer_2020/catkin_ws/src/auto_mapping_ros" + csv_localtraj_filepath;
         amr::read_sequence_from_csv(&coverage_sequence_non_ros_map, csv_filepath);
 
         // Translate non ros sequence to ros
@@ -135,9 +140,8 @@ public:
         trajp_.ReadTrajectories(csv_localtraj_path);
         trajp_.Trajectory2world(current_pose_);
         ROS_INFO("Read_trajectories");
-        std::cout<<"reaaaaad"<<std::endl;
-        std::thread t(&LocalPlanner::drive_loop, this);
-        t.detach();
+        // std::thread t(&LocalPlanner::drive_loop, this);
+        // t.detach();
     }
 
     /// Updates the current pose of the agent
@@ -158,6 +162,7 @@ public:
             ROS_INFO("Updated Global Plan for Car %i", local_planner_id_);
             current_plan_ = new_plan.value();
         }
+        VisualizePlan();
         float current_angle = Transforms::GetCarOrientation(current_pose_);
         State current_state(current_pose_.position.x, current_pose_.position.y, current_angle);
 
@@ -182,7 +187,6 @@ public:
             mpc_.UpdateScan(scan_msg);
 
         }
-        std::cout<<"scanning"<<std::endl;
     }
 
 private:
@@ -196,6 +200,7 @@ private:
     ros::Subscriber scan_sub_;
     ros::Publisher drive_pub_;
     ros::Publisher brake_pub_;
+    ros::Publisher plan_pub_;
     tf2_ros::Buffer tf_buffer_;
     tf2_ros::TransformListener tf_listener_;
 
@@ -254,26 +259,82 @@ private:
         }
         return current_inputs_[inputs_idx_];
     }
-    PlannerNode get_best_track_point(const std::vector<PlannerNode>& way_point_data)
+    int get_best_track_point(const std::vector<PlannerNode>& way_point_data)
     {
         double closest_distance = std::numeric_limits<double>::max();
         PlannerNode best_node{-1, -1};
+        int index=-1;
+        int best_index = -1;
 
         for(const auto& way_point: way_point_data)
         {
-            // if(way_point[0] < 0) continue;
+            index++;
+            // std::cout<<way_point[0]<<" ,"<<way_point[1]<<std::endl;
+            if(way_point[0] < 0) continue;
             double distance = sqrt(way_point[0]*way_point[0] + way_point[1]*way_point[1]);
-            double lookahead_diff = std::abs(distance - lookahead_distance_);
-            if(lookahead_diff < closest_distance)
+            double lookahead_diff = distance - lookahead_distance_;
+            if(lookahead_diff < closest_distance && lookahead_diff>0)
             {
+                best_index = index;
                 closest_distance = lookahead_diff;
                 best_node = way_point;
+            }
+        }
+        // std::cout<<"best index after first loop "<<best_index<<std::endl;
+
+        if(best_node == PlannerNode{-1, -1})
+        {
+            // TODO: Execute Reverse
+            // std::cout<<way_point_data.size()<<std::endl;
+            index = -1;
+            best_index = -1;
+            ROS_INFO("Pure Pursuit Failed to Find a Point in Front. Executing Stop.");
+            for(const auto& way_point: way_point_data)
+            {
+                index++;
+                double distance = sqrt(way_point[0]*way_point[0] + way_point[1]*way_point[1]);
+                double lookahead_diff = std::abs(distance - lookahead_distance_);
+                if(lookahead_diff < closest_distance)
+                {
+                    best_index = index;
+                    closest_distance = lookahead_diff;
+                    best_node = way_point;
+                }
+            }
+            return best_index;
+        }
+
+        ROS_DEBUG("closest_way_point: %f, %f", static_cast<double>(best_node[0]), static_cast<double>(best_node[1]));
+        return best_index;
+    }
+    PlannerNode get_closest(const std::vector<PlannerNode>& way_point_data)
+    {
+        double closest_distance = std::numeric_limits<double>::max();
+        PlannerNode best_node{-1, -1};
+        int index = -1;
+        int best_index = -1;
+        for(const auto& way_point: way_point_data)
+        {
+            index++;
+            // if(way_point[0] < 0) continue;
+            double distance = sqrt((way_point[0]-(current_pose_.position.x))*(way_point[0] - (current_pose_.position.x)) + (way_point[1]-(current_pose_.position.y))*(way_point[1]-(current_pose_.position.y)));
+            double lookahead_diff = std::abs(distance - lookahead_distance_);
+            if (distance>lookahead_distance_)
+            {
+                if(lookahead_diff < closest_distance)
+                {
+                    closest_distance = lookahead_diff;
+                    best_node = way_point;
+                    best_index = index;
+
+                }
             }
         }
 
         if(best_node == PlannerNode{-1, -1})
         {
             // TODO: Execute Reverse
+
             ROS_INFO("Pure Pursuit Failed to Find a Point in Front. Executing Stop.");
             stop_vehicle(&brake_pub_);
         }
@@ -286,9 +347,10 @@ private:
                           const PlannerNode& current_way_point)
     {
         const auto transformed_way_points = transform(reference_way_points, current_way_point);
-        const auto goal_way_point = get_best_track_point(transformed_way_points);
+        const auto goal_way_point_index = get_best_track_point(transformed_way_points);
+        const auto goal_way_point = reference_way_points[goal_way_point_index];
         const auto steering_angle = 2*(goal_way_point[1])/(lookahead_distance_*lookahead_distance_);
-
+        // std::cout<<goal_way_point[0]<<", "<<goal_way_point[1]<<std::endl;
         ackermann_msgs::AckermannDriveStamped drive_msg;
         drive_msg.header.stamp = ros::Time::now();
         drive_msg.header.frame_id = base_frame_;
@@ -302,23 +364,38 @@ private:
                           const PlannerNode& current_way_point, const State current_state)
     {
         const auto transformed_way_points = transform(reference_way_points, current_way_point);
-        const auto goal_way_point = get_best_track_point(transformed_way_points);
-        const auto steering_angle = 2*(goal_way_point[1])/(lookahead_distance_*lookahead_distance_);
+        const auto goal_way_point_index = get_best_track_point(transformed_way_points);
+        // std::cout<<"way point size "<<reference_way_points.size()<<" , best index "<<goal_way_point_index<<std::endl;
+        if (goal_way_point_index!=-1)
+        {   const auto goal_way_point = reference_way_points[goal_way_point_index];
+            std::pair<float, float> goal_to_track((float)goal_way_point[0],(float)goal_way_point[1]);
+            Input input_to_pass = GetNextInput();
+            // input_to_pass.set_v(0);
+            
+            trajp_.Update(current_pose_, occ_grid_, goal_to_track);
+            trajp_.Visualize();
+            // std::cout<<goal_way_point[0]<<", "<<goal_way_point[1]<<std::endl;
 
-        std::pair<float, float> goal_to_track((float)goal_way_point[0],(float)goal_way_point[1]);
-        Input input_to_pass = GetNextInput();
-        input_to_pass.set_v(0);
-        
-        trajp_.Update(current_pose_, occ_grid_, goal_to_track);
-        trajp_.Visualize();
-
-        if (trajp_.best_trajectory_index() > -1)
-        {
-            vector<State> bestMiniPath = trajp_.best_minipath();
-            mpc_.Update(current_state,input_to_pass,bestMiniPath);
-            current_inputs_ = mpc_.solved_trajectory();
-            mpc_.Visualize();
-            inputs_idx_ = 0;
+            if (trajp_.best_trajectory_index() > -1)
+            {
+                vector<State> bestMiniPath = trajp_.best_minipath();
+                mpc_.Update(current_state,input_to_pass,bestMiniPath);
+                current_inputs_ = mpc_.solved_trajectory();
+                mpc_.Visualize();
+                inputs_idx_ = 0;
+                ackermann_msgs::AckermannDriveStamped drive_msg;
+                Input input = GetNextInput();
+                // std::cout<<"Best trajectory "<<trajp_.best_trajectory_index()<<std::endl;
+                if (trajp_.best_trajectory_index() < 0)
+                {
+                    input.set_v(0.2);
+                }
+                drive_msg.header.stamp = ros::Time::now();
+                drive_msg.drive.speed = input.v();
+                drive_msg.drive.steering_angle = input.steer_ang();
+                drive_pub_.publish(drive_msg);
+                inputs_idx_++;
+            }
         }
     }
 
@@ -344,6 +421,20 @@ private:
             }
         }
     }
+
+    void VisualizePlan()
+{
+    std::vector<pair<float,float>> best_traj;
+    for (const auto& node: current_plan_)
+    {
+        std::pair<float,float> node_pair(node[0],node[1]);
+        best_traj.push_back(node_pair);
+    }
+    std::vector<geometry_msgs::Point> best_traj_points = Visualizer::GenerateVizPoints(best_traj);
+    std::vector<std_msgs::ColorRGBA> best_traj_colors = Visualizer::GenerateVizColors(best_traj, 0, 1, 0);
+    plan_pub_.publish(Visualizer::GenerateList(best_traj_points, best_traj_colors));
+    // visualizeCmaes();
+}
 };
 
 int LocalPlanner::local_planner_counter_ = 0;

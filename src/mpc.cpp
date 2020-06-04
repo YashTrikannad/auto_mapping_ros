@@ -76,6 +76,7 @@ void MPC::Update(State current_state, Input input, std::vector<State> &desired_s
 {
     current_state_ = current_state;
     desired_state_trajectory_ = desired_state_trajectory;
+    std::cout<<desired_state_trajectory.size()<<std::endl;
     model_.Linearize(current_state_, input, dt_);
     constraints_.set_state(current_state_);
     constraints_.FindHalfSpaces(current_state_,scan_msg_);
@@ -181,27 +182,27 @@ void MPC::Visualize()
     geometry_msgs::Point point;
     std_msgs::ColorRGBA color;
 
-    for (unsigned int ii = 0; ii < desired_state_trajectory_.size(); ++ii)
-    {
-        point.x = desired_state_trajectory_[ii].x();
-        point.y = desired_state_trajectory_[ii].y();
-        point.z = 0.2;
-        points_.push_back(point);
-        point.x = desired_state_trajectory_[ii].x() + 0.4 * cos(desired_state_trajectory_[ii].ori());
-        point.y = desired_state_trajectory_[ii].y() + 0.4 * sin(desired_state_trajectory_[ii].ori());
-        point.z = 0.2;
-        points_.push_back(point);
-        color.r = (float)ii / horizon_;
-        color.g = 0;
-        color.b = 0;
-        color.a = 1;
-        colors_.push_back(color);
-        color.r = 0;
-        color.g = (float)ii / horizon_;
-        color.b = 0;
-        color.a = 1;
-        colors_.push_back(color);
-    }
+    // for (unsigned int ii = 0; ii < desired_state_trajectory_.size(); ++ii)
+    // {
+    //     point.x = desired_state_trajectory_[ii].x();
+    //     point.y = desired_state_trajectory_[ii].y();
+    //     point.z = 0.2;
+    //     points_.push_back(point);
+    //     point.x = desired_state_trajectory_[ii].x() + 0.4 * cos(desired_state_trajectory_[ii].ori());
+    //     point.y = desired_state_trajectory_[ii].y() + 0.4 * sin(desired_state_trajectory_[ii].ori());
+    //     point.z = 0.2;
+    //     points_.push_back(point);
+    //     color.r = (float)ii / horizon_;
+    //     color.g = 0;
+    //     color.b = 0;
+    //     color.a = 1;
+    //     colors_.push_back(color);
+    //     color.r = 0;
+    //     color.g = (float)ii / horizon_;
+    //     color.b = 0;
+    //     color.a = 1;
+    //     colors_.push_back(color);
+    // }
 
     mpc_pub_.publish(Visualizer::GenerateList(points_, colors_, visualization_msgs::Marker::LINE_LIST, 0.05, 0.0, 0.0));
     points_.clear();
