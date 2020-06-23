@@ -2,7 +2,7 @@
 
 #include "auto_mapping_ros/local_planner.h"
 
-static constexpr int n_agents = 1;
+static constexpr int n_agents = 2;
 
 int main(int argc, char** argv)
 {

@@ -214,7 +214,7 @@ int TrajectoryPlanner::BestTrajectory(OccGrid &occ_grid, const geometry_msgs::Po
         prev_rev_ = false;
         best = best1;
     }
-    cout<<best<<endl;
+    // cout<<best<<endl;
     
     
     if (!cmaes_point_pushed_)
@@ -311,7 +311,7 @@ void TrajectoryPlanner::Visualize()
     points_.insert(points_.end(), cmaes_points.begin(), cmaes_points.end());
     colors_.insert(colors_.end(), cmaes_colors.begin(), cmaes_colors.end());
     cmaes_pushed_ = true;
-    traj_pub_.publish(Visualizer::GenerateList(points_, colors_));
+    // traj_pub_.publish(Visualizer::GenerateList(points_, colors_));
     cmaes_point_pushed_ = false;
     best_traj_pushed_ = false;
     cmaes_pushed_ = false;

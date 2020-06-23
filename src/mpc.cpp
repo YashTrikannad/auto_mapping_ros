@@ -76,7 +76,7 @@ void MPC::Update(State current_state, Input input, std::vector<State> &desired_s
 {
     current_state_ = current_state;
     desired_state_trajectory_ = desired_state_trajectory;
-    std::cout<<desired_state_trajectory.size()<<std::endl;
+    // std::cout<<desired_state_trajectory.size()<<std::endl;
     model_.Linearize(current_state_, input, dt_);
     constraints_.set_state(current_state_);
     constraints_.FindHalfSpaces(current_state_,scan_msg_);
@@ -204,7 +204,7 @@ void MPC::Visualize()
     //     colors_.push_back(color);
     // }
 
-    mpc_pub_.publish(Visualizer::GenerateList(points_, colors_, visualization_msgs::Marker::LINE_LIST, 0.05, 0.0, 0.0));
+    // mpc_pub_.publish(Visualizer::GenerateList(points_, colors_, visualization_msgs::Marker::LINE_LIST, 0.05, 0.0, 0.0));
     points_.clear();
     colors_.clear();
 }
