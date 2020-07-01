@@ -9,12 +9,13 @@ This application provides the user with the ability to autonomously navigate a b
 **Current Capabilities**
 - Construct Graph that covers the free space in the user defined area from image of map
 - Run Vehicle Routing for assigning each vehicle the locations that they need to explore
-- Autonomously navigate multiple cars on the routes decided for them
+- Autonomously navigate multiple cars on the routes decided for them  
+- MPC controller -> Can reverse and find ways to reach goal points even if they are behind  
 
 **Capabilities to be added in future**
-- Add set of complex maneouvres Eg. Reverse, Car interactions
-- Add a local planner layer between the global planner (FMT Star) and controller (pure pursuit)
-- Add Start Stop Signals for cars
+- Add a local planner layer between the global planner (FMT Star) and controller (pure pursuit)  
+- Add Start Stop Signals for cars  
+- To have separate threads each vehicle controller  
 - Explore the use of *set of commands (go right, take second left) + wall follower* instead of a the current planning pipeline where reasonable estimate of current pose of robot (localization) is very important. 
 
 
