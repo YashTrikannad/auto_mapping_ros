@@ -1,15 +1,21 @@
 # auto_mapping_ros
 Auto Mapping ROS software for autonomously constructing a High Definition Map using Multiple Robots.
 
-This application provides the user with the ability to autonomously navigate a blueprint/floorplans autonomously and cover the entire free space to build a high definition map using SLAM Software (Eg. Google Cartographer) using multiple autonomous robots (F110 Cars).
+This application provides the user with the ability to autonomously navigate a blueprint/floorplans and cover the entire free space to build a high definition map using any 2D/3D SLAM Software using multiple autonomous robots (F110 Cars).
+
+Note: This package only provides control commands for the car to navigate in an indoor space. The user needs to provide localization to enable the car to localize in the blueprint (and thus to continue running the motion planner) and mapping software (optional: This is only required if the user wants to build their map). 
+
+Useful packages:
+Localization: [mit-racecar/particle_filter](https://github.com/mit-racecar/particle_filter)
+SLAM: [Google cartographer](https://google-cartographer.readthedocs.io/en/latest/)
 
 <p align="center"><img src="media/auto_mapping_ros.jpg" width="400" height="600">
 </p>
 
 **Current Capabilities**
 - Construct Graph that covers the free space in the user defined area from image of map
-- Run Vehicle Routing for assigning each vehicle the locations that they need to explore
-- Autonomously navigate multiple cars on the routes decided for them  
+- Runs Vehicle Routing for assigning each vehicle the locations that they need to explore
+- Autonomously navigates multiple cars on the routes decided for them  
 - MPC controller -> Can reverse and find ways to reach goal points even if they are behind  
 
 **Capabilities to be added in future**
