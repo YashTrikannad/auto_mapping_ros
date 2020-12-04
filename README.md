@@ -3,9 +3,10 @@ Auto Mapping ROS software for autonomously constructing a High Definition Map us
 
 This application provides the user with the ability to autonomously navigate a blueprint/floorplans and cover the entire free space to build a high definition map using any 2D/3D SLAM Software using multiple autonomous robots (F110 Cars).
 
-Note: This package only provides control commands for the car to navigate in an indoor space. The user needs to provide localization to enable the car to localize in the blueprint (and thus to continue running the motion planner) and mapping software (optional: This is only required if the user wants to build their map). 
+Note: This package only provides control commands for the car to navigate in an indoor space. The user needs to provide localization to enable the car to localize in the blueprint (and thus to continue running the motion planner) and mapping software (optional: This is only required if the user wants to build their map). The simulator will still run without the localization package.
 
-Useful packages:
+Useful external packages:
+
 Localization: [mit-racecar/particle_filter](https://github.com/mit-racecar/particle_filter)
 SLAM: [Google cartographer](https://google-cartographer.readthedocs.io/en/latest/)
 
@@ -18,10 +19,8 @@ SLAM: [Google cartographer](https://google-cartographer.readthedocs.io/en/latest
 - Autonomously navigates multiple cars on the routes decided for them  
 - MPC controller -> Can reverse and find ways to reach goal points even if they are behind  
 
-**Capabilities to be added in future**
-- Add a local planner layer between the global planner (FMT Star) and controller (pure pursuit)  
-- Add Start Stop Signals for cars  
-- To have separate threads each vehicle controller  
+**Capabilities to be added in future** 
+- Have separate threads for each vehicle controller  
 - Explore the use of *set of commands (go right, take second left) + wall follower* instead of a the current planning pipeline where reasonable estimate of current pose of robot (localization) is very important. 
 
 
@@ -34,7 +33,7 @@ sudo apt-get install libconfig++-dev
 
 You will need to build the simulator. You can follow the tutorial [here](https://github.com/YashTrikannad/f110-simulator-multi-agent) to build the simulator.
 
-This repository depends on a planner service. You can use the FMT* Planning Service from my repository here.
+This repository depends on a planner service. You can use the FMT* Planning Service from my repository [here](https://github.com/YashTrikannad/fmt_star_ros).
 ```
 cd catkin_ws/src
 git clone https://github.com/YashTrikannad/fmt_star_ros.git
